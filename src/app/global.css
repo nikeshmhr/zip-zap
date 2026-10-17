@@ -107,3 +107,11 @@ button {
   outline: 2px solid var(--selection);
   outline-offset: 2px;
 }
+
+/* Settings → Reduce motion: stop animations and transitions everywhere. */
+:root[data-motion='reduce'] *,
+:root[data-motion='reduce'] *::before,
+:root[data-motion='reduce'] *::after {
+  animation: none !important;
+  transition: none !important;
+}

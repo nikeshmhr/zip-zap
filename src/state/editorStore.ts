@@ -7,6 +7,7 @@
  */
 import { createStore } from 'zustand/vanilla';
 import type { Bit, Bits, Circuit, ComponentKind, Point } from '../engine/model.ts';
+import type { EditOptions } from './editing.ts';
 import {
   addComponent,
   deleteItems,
@@ -82,7 +83,11 @@ function pruneSelection(selection: Selection, circuit: Circuit): Selection {
 const record = (past: readonly Circuit[], circuit: Circuit) =>
   [...past, circuit].slice(-HISTORY_LIMIT);
 
-export function createEditorStore(initial: Circuit, inputs: Bits = {}) {
+export function createEditorStore(
+  initial: Circuit,
+  inputs: Bits = {},
+  opts: EditOptions = { fixedIo: true },
+) {
   return createStore<EditorState & EditorActions>()((set, get) => ({
     circuit: initial,
     selection: EMPTY_SELECTION,
@@ -165,9 +170,9 @@ export function createEditorStore(initial: Circuit, inputs: Bits = {}) {
     },
 
     moveSelection: (delta) =>
-      get().commit((c) => moveComponents(c, get().selection.components, delta)),
+      get().commit((c) => moveComponents(c, get().selection.components, delta, opts)),
 
-    moveParts: (ids, delta) => get().commit((c) => moveComponents(c, ids, delta)),
+    moveParts: (ids, delta) => get().commit((c) => moveComponents(c, ids, delta, opts)),
 
     rotateSelection: () => get().commit((c) => rotateComponents(c, get().selection.components)),
 
@@ -183,7 +188,7 @@ export function createEditorStore(initial: Circuit, inputs: Bits = {}) {
 
     deleteSelection: () => {
       const { selection } = get();
-      get().commit((c) => deleteItems(c, selection.components, selection.wires));
+      get().commit((c) => deleteItems(c, selection.components, selection.wires, opts));
       set({ selection: pruneSelection(get().selection, get().circuit) });
     },
 

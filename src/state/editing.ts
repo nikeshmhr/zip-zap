@@ -48,7 +48,14 @@ export function nextId(ids: Iterable<string>, prefix: string): string {
   return `${prefix}${max + 1}`;
 }
 
-const isFixed = (c: ComponentInstance) => isIoKind(c.kind);
+export interface EditOptions {
+  /** Level IO can't be moved, rotated or deleted (true for levels, false for the sandbox). */
+  fixedIo: boolean;
+}
+
+const LEVEL: EditOptions = { fixedIo: true };
+
+const isFixed = (c: ComponentInstance, opts: EditOptions) => opts.fixedIo && isIoKind(c.kind);
 
 export function addComponent(
   circuit: Circuit,
@@ -71,14 +78,19 @@ export function addComponent(
 }
 
 /** Moves the given parts by a whole number of grid units. Fixed IO stays put. */
-export function moveComponents(circuit: Circuit, ids: readonly string[], delta: Point): Circuit {
+export function moveComponents(
+  circuit: Circuit,
+  ids: readonly string[],
+  delta: Point,
+  opts: EditOptions = LEVEL,
+): Circuit {
   const dx = Math.round(delta.x);
   const dy = Math.round(delta.y);
   if (dx === 0 && dy === 0) return circuit;
   const move = new Set(ids);
   return produce(circuit, (draft) => {
     for (const c of draft.components) {
-      if (move.has(c.id) && !isFixed(c)) {
+      if (move.has(c.id) && !isFixed(c, opts)) {
         c.pos.x += dx;
         c.pos.y += dy;
       }
@@ -86,13 +98,15 @@ export function moveComponents(circuit: Circuit, ids: readonly string[], delta: 
   });
 }
 
-/** Rotates the given parts a quarter turn clockwise. */
+/** Rotates parts a quarter turn clockwise. IO switches and lamps never rotate. */
 export function rotateComponents(circuit: Circuit, ids: readonly string[]): Circuit {
   const turn = new Set(ids);
-  if (!circuit.components.some((c) => turn.has(c.id) && !isFixed(c))) return circuit;
+  // IO switches and lamps are never rotated, so their labels stay readable.
+  const rotatable = (c: ComponentInstance) => turn.has(c.id) && !isIoKind(c.kind);
+  if (!circuit.components.some(rotatable)) return circuit;
   return produce(circuit, (draft) => {
     for (const c of draft.components) {
-      if (turn.has(c.id) && !isFixed(c)) c.rot = ((c.rot + 90) % 360) as Rotation;
+      if (rotatable(c)) c.rot = ((c.rot + 90) % 360) as Rotation;
     }
   });
 }
@@ -102,9 +116,12 @@ export function deleteItems(
   circuit: Circuit,
   componentIds: readonly string[],
   wireIds: readonly string[],
+  opts: EditOptions = LEVEL,
 ): Circuit {
   const doomed = new Set(
-    circuit.components.filter((c) => componentIds.includes(c.id) && !isFixed(c)).map((c) => c.id),
+    circuit.components
+      .filter((c) => componentIds.includes(c.id) && !isFixed(c, opts))
+      .map((c) => c.id),
   );
   const doomedWires = new Set(wireIds);
   const wires = circuit.wires.filter(
@@ -126,7 +143,8 @@ export function duplicateComponents(
   ids: readonly string[],
   offset: Point = { x: 2, y: 2 },
 ): { circuit: Circuit; ids: string[] } {
-  const sources = circuit.components.filter((c) => ids.includes(c.id) && !isFixed(c));
+  // IO is never duplicated: pin names must stay unique.
+  const sources = circuit.components.filter((c) => ids.includes(c.id) && !isIoKind(c.kind));
   if (sources.length === 0) return { circuit, ids: [] };
 
   const idMap = new Map<string, string>();
@@ -159,7 +177,7 @@ export function duplicateComponents(
 }
 
 /** Whether a component may be moved, rotated, duplicated or deleted. */
-export const isEditable = (circuit: Circuit, id: string) => {
+export const isEditable = (circuit: Circuit, id: string, opts: EditOptions = LEVEL) => {
   const c = circuit.components.find((x) => x.id === id);
-  return !!c && !isFixed(c);
+  return !!c && !isFixed(c, opts);
 };

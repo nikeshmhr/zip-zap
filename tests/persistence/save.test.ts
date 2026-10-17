@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { MemoryStorage } from '../support/memoryStorage.ts';
 import type { Migration } from '../../src/persistence/save.ts';
 import {
   SAVE_KEY,
@@ -11,32 +12,6 @@ import {
   parseSave,
   writeSave,
 } from '../../src/persistence/save.ts';
-
-/** A minimal in-memory Storage. */
-class MemoryStorage implements Storage {
-  private data = new Map<string, string>();
-  get length() {
-    return this.data.size;
-  }
-  clear() {
-    this.data.clear();
-  }
-  getItem(key: string) {
-    return this.data.get(key) ?? null;
-  }
-  key(i: number) {
-    return [...this.data.keys()][i] ?? null;
-  }
-  removeItem(key: string) {
-    this.data.delete(key);
-  }
-  setItem(key: string, value: string) {
-    this.data.set(key, value);
-  }
-  keys() {
-    return [...this.data.keys()];
-  }
-}
 
 const fixture = JSON.parse(
   readFileSync(new URL('./fixtures/save-v1.json', import.meta.url), 'utf8'),

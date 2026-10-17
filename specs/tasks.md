@@ -134,7 +134,7 @@
   - Done when: the unit tests for the unlock rules pass.
 - [x] **T5.2 Save schema** · Zod `SaveV1`, migration chain, corrupt-save quarantine (plan §7)
   - Done when: tests cover a round-trip, a v1 fixture migration, and a corrupt-save backup.
-- [ ] **T5.3 Autosave and load** · debounced 500 ms writes; per-level circuits restored on open
+- [x] **T5.3 Autosave and load** · debounced 500 ms writes; per-level circuits restored on open
   - Done when: a manual reload mid-level restores the exact circuit.
 - [ ] **T5.4 Map screen** · chapters × level nodes (locked/available/solved + bests); entry point to the Sandbox
   - Done when: the map reflects progress, and locked levels can't be opened from the URL either.

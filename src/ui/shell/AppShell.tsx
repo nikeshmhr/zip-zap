@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useSaveNotice } from '../../state/persist.ts';
 import type { Route } from '../../app/router.ts';
 import { routeHref } from '../../app/router.ts';
 import styles from './AppShell.module.css';
@@ -10,8 +11,17 @@ const NAV = [
 ] as const;
 
 export function AppShell({ route, children }: { route: Route; children: ReactNode }) {
+  const notice = useSaveNotice();
   return (
     <div className={styles.shell}>
+      {notice.message && (
+        <div className={styles.notice} role="alert">
+          <span>{notice.message}</span>
+          <button type="button" onClick={notice.dismiss}>
+            Dismiss
+          </button>
+        </div>
+      )}
       <header className={styles.header}>
         <a className={styles.logo} href={routeHref({ name: 'map' })}>
           <span aria-hidden="true" className={styles.mark}>

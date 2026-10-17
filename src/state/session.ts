@@ -10,15 +10,66 @@ import type { EditorStore } from './editorStore.ts';
 import { createEditorStore } from './editorStore.ts';
 
 const editors = new Map<string, EditorStore>();
+/** Circuits loaded from the save, used when a level's editor is first opened. */
+let savedCircuits: Record<string, Circuit> = {};
+const editorListeners = new Set<() => void>();
 
-/** The editor for a level (or the sandbox), created with the level's start circuit. */
-export function levelEditor(id: string, io: LevelIo): EditorStore {
+/** Seeds the circuits that editors start from (when loading a save). */
+export function seedCircuits(circuits: Record<string, Circuit>) {
+  savedCircuits = { ...circuits };
+}
+
+/** Whether a saved circuit still has exactly the level's pins (levels can change in updates). */
+export function matchesIo(circuit: Circuit, io: LevelIo): boolean {
+  const labels = (kind: 'in' | 'out') =>
+    circuit.components
+      .filter((c) => c.kind === kind)
+      .map((c) => c.label ?? '')
+      .sort()
+      .join(',');
+  return (
+    labels('in') === [...io.inputs].sort().join(',') &&
+    labels('out') === [...io.outputs].sort().join(',')
+  );
+}
+
+/**
+ * The editor for a level, created from the saved circuit if it still fits the level, else the
+ * level's start circuit. Pass `io: null` for free-form circuits (the sandbox).
+ */
+export function levelEditor(id: string, io: LevelIo | null, fixedIo = true): EditorStore {
   let store = editors.get(id);
   if (!store) {
-    store = createEditorStore(startCircuit(io));
+    const saved = savedCircuits[id];
+    const initial =
+      saved && (io === null || matchesIo(saved, io))
+        ? saved
+        : startCircuit(io ?? { inputs: [], outputs: [] });
+    store = createEditorStore(initial, {}, { fixedIo });
     editors.set(id, store);
+    store.subscribe((state, previous) => {
+      if (state.circuit !== previous.circuit) editorListeners.forEach((l) => l());
+    });
   }
   return store;
+}
+
+/** Calls `listener` whenever any editor's circuit changes. Returns an unsubscribe function. */
+export function onCircuitChange(listener: () => void): () => void {
+  editorListeners.add(listener);
+  return () => editorListeners.delete(listener);
+}
+
+/** Every circuit worth saving: saved ones not opened this session, plus the open editors'. */
+export function allCircuits(): Record<string, Circuit> {
+  const circuits = { ...savedCircuits };
+  for (const [id, store] of editors) circuits[id] = store.getState().circuit;
+  return circuits;
+}
+
+/** Forgets every open editor (after resetting or importing progress). */
+export function resetEditors() {
+  editors.clear();
 }
 
 /** The player's current design for every level they've opened this session. */
