@@ -57,7 +57,8 @@ export interface EditorActions {
   moveSelection(delta: Point): void;
   moveParts(ids: readonly string[], delta: Point): void;
   rotateSelection(): void;
-  duplicateSelection(): void;
+  /** Copies the selected parts, offset by `offset` grid units (default: down-right). */
+  duplicateSelection(offset?: Point): void;
   deleteSelection(): void;
 
   select(selection: Selection): void;
@@ -170,10 +171,10 @@ export function createEditorStore(initial: Circuit, inputs: Bits = {}) {
 
     rotateSelection: () => get().commit((c) => rotateComponents(c, get().selection.components)),
 
-    duplicateSelection: () => {
+    duplicateSelection: (offset) => {
       let ids: string[] = [];
       get().commit((circuit) => {
-        const result = duplicateComponents(circuit, get().selection.components);
+        const result = duplicateComponents(circuit, get().selection.components, offset);
         ids = result.ids;
         return result.circuit;
       });

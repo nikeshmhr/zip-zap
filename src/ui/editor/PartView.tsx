@@ -23,7 +23,12 @@ export interface PartViewProps {
   flagged?: boolean;
   /** A picture only (e.g. a toolbox preview): no hit-testing attributes. */
   decorative?: boolean;
+  /** Pins a wire being drawn can't end on (dimmed instead of highlighted). */
+  blockedPins?: ReadonlySet<string>;
 }
+
+/** Primitives whose pin names aren't printed on the part; they appear on hover. */
+const HOVER_LABELLED = new Set<string>(['nand', 'relayNO', 'relayNC']);
 
 /** Contact arm angles (degrees) for a closed and an open relay. */
 const ARM_CLOSED = -22.2;
@@ -221,17 +226,34 @@ export const PartView = memo(function PartView(props: PartViewProps) {
         )}
         <Body {...props} />
         {geom.pins.map((pin) => (
-          <g key={`${pin.dir}:${pin.name}`}>
+          <g
+            key={`${pin.dir}:${pin.name}`}
+            className={styles.pinGroup}
+            data-pin={decorative ? undefined : pinKeyAttr(part.id, pin.name, pin.dir)}
+            data-blocked={props.blockedPins?.has(pin.name) || undefined}
+          >
+            {/* A larger invisible target makes pins easy to grab. */}
+            {!decorative && <circle className={styles.pinHit} cx={pin.x} cy={pin.y} r={0.7} />}
             <circle
               className={styles.pin}
-              data-pin={decorative ? undefined : pinKeyAttr(part.id, pin.name, pin.dir)}
               data-on={values[pin.name] === 1 || undefined}
               cx={pin.x}
               cy={pin.y}
               r={0.32}
-            >
-              <title>{pin.name}</title>
-            </circle>
+            />
+            {!decorative && HOVER_LABELLED.has(part.kind) && (
+              <text
+                className={styles.hoverLabel}
+                {...upright(
+                  pin.x + (pin.dir === 'in' ? -0.6 : 0.6),
+                  pin.y - 0.6,
+                  part.rot,
+                  pin.dir === 'in' ? 'end' : 'start',
+                )}
+              >
+                {pin.name}
+              </text>
+            )}
           </g>
         ))}
       </g>

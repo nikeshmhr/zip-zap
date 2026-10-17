@@ -32,9 +32,33 @@
   box-shadow: var(--shadow);
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
 .panel h2 {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 14px;
+}
+
+.close {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .panel dl {

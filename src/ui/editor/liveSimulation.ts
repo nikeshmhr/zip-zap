@@ -69,11 +69,20 @@ export class LiveSimulation {
 
     const netOf = this.netOf!;
     const values = new Map<number, Bit>();
+    let flaggedParts: ReadonlySet<string> = EMPTY;
+    let flaggedWires: ReadonlySet<string> = EMPTY;
+    if (!stable) {
+      const looping = new Set(sim.pendingComponents());
+      flaggedParts = looping;
+      flaggedWires = new Set(
+        circuit.wires.filter((w) => looping.has(w.from.comp)).map((w) => w.id),
+      );
+    }
     return {
       status: stable ? 'ok' : 'unstable',
       issues: [],
-      flaggedWires: EMPTY,
-      flaggedParts: EMPTY,
+      flaggedWires,
+      flaggedParts,
       // Snapshot the values now: the simulator keeps running as inputs change.
       pin: (comp, pin) => {
         const net = netOf.get(pinKey({ comp, pin }));

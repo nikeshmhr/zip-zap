@@ -143,9 +143,28 @@
   fill: var(--wire-on);
 }
 
-.pin:hover {
+.pinHit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.pinGroup:hover .pin {
   r: 0.45;
   stroke: var(--selection);
+}
+
+.hoverLabel {
+  font-family: var(--mono);
+  font-size: 0.6px;
+  fill: var(--text);
+  dominant-baseline: central;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 100ms;
+}
+
+.part:hover .hoverLabel {
+  opacity: 1;
 }
 
 .selection {

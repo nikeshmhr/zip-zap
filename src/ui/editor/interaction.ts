@@ -46,6 +46,8 @@ export interface InteractionContext {
   selection: Selection;
   /** Ids of parts whose bounds intersect the rectangle (world units). */
   partsInRect(rect: Rect): string[];
+  /** Ids of wires whose both ends are on the given parts. */
+  wiresBetween(components: readonly string[]): string[];
 }
 
 export interface PointerInput {
@@ -162,10 +164,8 @@ export function pointerMove(mode: Mode, input: PointerInput, ctx: InteractionCon
         mode.base.components,
         ctx.partsInRect(normalizeRect(mode.start, world)),
       );
-      return [
-        { ...mode, current: world },
-        [{ type: 'select', selection: { ...mode.base, components } }],
-      ];
+      const wires = union(mode.base.wires, ctx.wiresBetween(components));
+      return [{ ...mode, current: world }, [{ type: 'select', selection: { components, wires } }]];
     }
 
     case 'idle':

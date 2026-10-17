@@ -126,6 +126,13 @@ export function CircuitEditor(props: CircuitEditorProps) {
         const g = geomOf(c.kind);
         return g && rectsIntersect(partRect(c, g), rect) ? [c.id] : [];
       }),
+    wiresBetween: (ids) => {
+      const chosen = new Set(ids);
+      return store
+        .getState()
+        .circuit.wires.filter((w) => chosen.has(w.from.comp) && chosen.has(w.to.comp))
+        .map((w) => w.id);
+    },
   });
 
   const apply = (effects: Effect[]) => {
@@ -208,9 +215,17 @@ export function CircuitEditor(props: CircuitEditorProps) {
         case 'redo':
           s.redo();
           break;
-        case 'duplicate':
-          s.duplicateSelection();
+        case 'duplicate': {
+          // Put the copies just below the originals, clear of them.
+          const rects = s.circuit.components.flatMap((c) => {
+            const g = s.selection.components.includes(c.id) ? geomOf(c.kind) : undefined;
+            return g ? [partRect(c, g)] : [];
+          });
+          const top = Math.min(...rects.map((r) => r.y));
+          const bottom = Math.max(...rects.map((r) => r.y + r.height));
+          s.duplicateSelection(rects.length > 0 ? { x: 0, y: bottom - top + 2 } : undefined);
           break;
+        }
         case 'rotate':
           s.rotateSelection();
           break;
@@ -323,6 +338,28 @@ export function CircuitEditor(props: CircuitEditorProps) {
   }, [mode, pinAnchor]);
   const box = mode.kind === 'boxSelecting' ? normalizeRect(mode.start, mode.current) : null;
 
+  // While wiring from an output: inputs that already have a wire (unless joining relays).
+  const blocked = useMemo(() => {
+    const result = new Map<string, Set<string>>();
+    if (mode.kind !== 'wiring' || mode.from.dir !== 'out') return result;
+    const isRelay = (comp: string) => {
+      const kind = circuit.components.find((c) => c.id === comp)?.kind;
+      return !!kind && !!resolve(kind)?.wiredOrOutput;
+    };
+    const fromRelay = isRelay(mode.from.ref.comp);
+    const sources = new Map<string, string[]>();
+    for (const w of circuit.wires) {
+      const key = `${w.to.comp}|${w.to.pin}`;
+      sources.set(key, [...(sources.get(key) ?? []), w.from.comp]);
+    }
+    for (const [key, from] of sources) {
+      if (fromRelay && from.every(isRelay)) continue;
+      const [comp = '', pin = ''] = key.split('|');
+      result.set(comp, new Set([...(result.get(comp) ?? []), pin]));
+    }
+    return result;
+  }, [mode, circuit, resolve]);
+
   /**
    * Adds a part centred on a world point, if the toolbox allows it. Clicked parts (`avoid`)
    * move to the nearest free spot; dropped parts land exactly where the player put them.
@@ -365,6 +402,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
         label={label}
         onPointerDown={(e) => {
           if (e.event.button !== 0) return;
+          setHelpOpen(false);
           e.event.currentTarget.setPointerCapture(e.event.pointerId);
           run(pointerDown(modeRef.current, toInput(e), context()));
         }}
@@ -421,6 +459,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
                 values={pinValues(snapshot, part.id, geom.pins)}
                 selected={selected.has(part.id)}
                 flagged={snapshot.flaggedParts.has(part.id)}
+                blockedPins={blocked.get(part.id)}
               />
             );
           })}

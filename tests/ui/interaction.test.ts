@@ -17,6 +17,7 @@ const ctx = (
 ): InteractionContext => ({
   selection,
   partsInRect: () => inRect,
+  wiresBetween: (ids) => (ids.includes('p1') && ids.includes('p2') ? ['w12'] : []),
 });
 
 const part = (id: string): HitTarget => ({ type: 'part', id });
@@ -88,7 +89,7 @@ describe('selecting', () => {
     const [moved, effects] = pointerMove(box, at(5, 5), ctx(undefined, ['p1', 'p2']));
     expect(moved).toMatchObject({ kind: 'boxSelecting', current: { x: 5, y: 5 } });
     expect(effects).toEqual([
-      { type: 'select', selection: { components: ['p1', 'p2'], wires: [] } },
+      { type: 'select', selection: { components: ['p1', 'p2'], wires: ['w12'] } },
     ]);
     expect(pointerUp(moved, at(5, 5), ctx())[0]).toBe(IDLE);
   });

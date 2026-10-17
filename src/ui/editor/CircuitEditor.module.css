@@ -7,10 +7,14 @@
 }
 
 /* While wiring, highlight the pins the wire can end on. */
-.parts[data-wiring='in'] [data-pin$='|in'],
-.parts[data-wiring='out'] [data-pin$='|out'] {
+.parts[data-wiring='in'] [data-pin$='|in']:not([data-blocked]) circle:last-of-type,
+.parts[data-wiring='out'] [data-pin$='|out']:not([data-blocked]) circle:last-of-type {
   stroke: var(--selection);
-  stroke-width: 0.14;
+  stroke-width: 0.16;
+}
+
+.parts[data-wiring] [data-blocked] {
+  opacity: 0.35;
 }
 
 .toast {

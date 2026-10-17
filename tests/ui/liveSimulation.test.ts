@@ -72,7 +72,10 @@ describe('LiveSimulation', () => {
       b.wire(g.out('out'), g.in('b'));
       b.wire(g.out('out'), 'OUT');
     });
-    expect(new LiveSimulation(primitiveResolver).evaluate(ring, {}).status).toBe('unstable');
+    const snap = new LiveSimulation(primitiveResolver).evaluate(ring, {});
+    expect(snap.status).toBe('unstable');
+    expect([...snap.flaggedParts]).toEqual(['c1']);
+    expect([...snap.flaggedWires].sort()).toEqual(['w1', 'w2', 'w3']);
   });
 
   it('flags shorts and their wires instead of simulating', () => {

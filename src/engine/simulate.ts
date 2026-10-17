@@ -162,6 +162,11 @@ export class Simulator {
     return { stable: true, ticks };
   }
 
+  /** Ids of components still waiting to update (after an unstable settle: the oscillating ones). */
+  pendingComponents(): string[] {
+    return this.dirtyList.map((i) => this.netlist.components[i]!.id);
+  }
+
   /** Current values of all level outputs. */
   readOutputs(): Bits {
     const bits: Bits = {};

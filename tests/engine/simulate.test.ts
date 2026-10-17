@@ -78,6 +78,7 @@ describe('Simulator: feedback and stability', () => {
     });
     const result = sim.settle(50);
     expect(result).toEqual({ stable: false, ticks: 50 });
+    expect(sim.pendingComponents()).toEqual(['c1']);
   });
 
   it('uses a default tick limit based on circuit size', () => {

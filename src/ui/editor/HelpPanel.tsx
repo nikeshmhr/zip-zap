@@ -19,7 +19,12 @@ export function HelpPanel({ open, onToggle, onFit }: HelpPanelProps) {
           role="dialog"
           aria-label="Keyboard shortcuts"
         >
-          <h2>Keyboard shortcuts</h2>
+          <div className={styles.header}>
+            <h2>Keyboard shortcuts</h2>
+            <button type="button" className={styles.close} aria-label="Close" onClick={onToggle}>
+              ×
+            </button>
+          </div>
           <dl>
             {shortcutList(isApple() ? '⌘' : 'Ctrl').map(({ keys, action }) => (
               <div key={action}>

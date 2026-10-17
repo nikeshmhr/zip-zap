@@ -11,5 +11,5 @@ test('the component gallery renders every component kind, OFF and ON', async ({ 
   expect(kinds).toHaveLength(28);
   expect(kinds).toEqual(expect.arrayContaining(['in', 'out', 'relayNO', 'nand', 'chip:ram4x4']));
   // Every part has its pins, and the ON row shows them as ON.
-  expect(await canvas.locator('[data-pin][data-on]').count()).toBeGreaterThan(0);
+  expect(await canvas.locator('[data-pin] [data-on]').count()).toBeGreaterThan(0);
 });
