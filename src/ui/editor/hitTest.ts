@@ -8,6 +8,7 @@ export type HitTarget =
   | { type: 'toggle'; name: string }
   | { type: 'part'; id: string }
   | { type: 'wire'; id: string }
+  | { type: 'bend'; wire: string; index: number }
   | { type: 'canvas' };
 
 export const pinKeyAttr = (part: string, pin: string, dir: 'in' | 'out') => `${part}|${pin}|${dir}`;
@@ -22,6 +23,11 @@ export function hitTest(target: EventTarget | null): HitTarget {
   if (!(target instanceof Element)) return { type: 'canvas' };
   const pin = target.closest('[data-pin]');
   if (pin) return { type: 'pin', ...parsePinAttr(pin.getAttribute('data-pin')!) };
+  const bend = target.closest('[data-bend]');
+  if (bend) {
+    const [wire = '', index = '0'] = bend.getAttribute('data-bend')!.split('|');
+    return { type: 'bend', wire, index: Number(index) };
+  }
   const toggle = target.closest('[data-toggle]');
   if (toggle) return { type: 'toggle', name: toggle.getAttribute('data-toggle')! };
   const wire = target.closest('[data-wire]');

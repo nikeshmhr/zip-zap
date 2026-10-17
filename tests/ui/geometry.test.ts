@@ -4,6 +4,8 @@ import { PRIMITIVES } from '../../src/engine/primitives.ts';
 import { catalogue } from '../../src/content/index.ts';
 import {
   branchPoint,
+  distanceAlong,
+  routeThroughBends,
   findFreeSpot,
   partGeometry,
   partRect,
@@ -315,5 +317,35 @@ describe('routeWires: keeping signals apart (playtest)', () => {
       return a.x === p.x && a.x > part.x && a.x < part.x + part.width;
     });
     expect(crosses).toBe(false);
+  });
+});
+
+describe('bend points', () => {
+  it('routes through bends at right angles, leaving and entering pins straight', () => {
+    const route = routeThroughBends(
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      [{ x: 5, y: 6 }],
+      { x: 12, y: 2 },
+      { x: -1, y: 0 },
+    );
+    expect(route).toEqual([
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+      { x: 5, y: 6 },
+      { x: 11, y: 6 },
+      { x: 11, y: 2 },
+      { x: 12, y: 2 },
+    ]);
+  });
+
+  it('measures how far along a route a point lies', () => {
+    const route = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+    ];
+    expect(distanceAlong(route, { x: 4, y: 1 })).toBe(4);
+    expect(distanceAlong(route, { x: 11, y: 7 })).toBe(17);
   });
 });

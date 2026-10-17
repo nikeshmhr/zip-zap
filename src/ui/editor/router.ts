@@ -97,7 +97,11 @@ interface Grid {
   corner: Int32Array;
 }
 
-function makeGrid(requests: readonly WireRequest[], obstacles: readonly Rect[]): Grid {
+function makeGrid(
+  requests: readonly WireRequest[],
+  obstacles: readonly Rect[],
+  extra: readonly Point[] = [],
+): Grid {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -116,6 +120,7 @@ function makeGrid(requests: readonly WireRequest[], obstacles: readonly Rect[]):
     grow(o.x, o.y);
     grow(o.x + o.width, o.y + o.height);
   }
+  for (const p of extra) grow(p.x, p.y);
   const margin = WINDOW_MARGINS.at(-1)!;
   const x0 = Math.floor(minX) - margin;
   const y0 = Math.floor(minY) - margin;
@@ -296,14 +301,25 @@ function search(
  * Routes every wire around the obstacles (part outlines). Shorter wires go first so the
  * common, simple connections get the straightest paths.
  */
+/** A wire whose route is already fixed (shaped by the player): others keep clear of it. */
+export interface FixedRoute extends WireRequest {
+  points: readonly Point[];
+}
+
 export function routeAround(
   requests: readonly WireRequest[],
   obstacles: readonly Rect[],
   stats?: RouterStats,
+  fixed: readonly FixedRoute[] = [],
 ): Map<string, Point[]> {
   const routes = new Map<string, Point[]>();
-  if (requests.length === 0) return routes;
-  const grid = makeGrid(requests, obstacles);
+  if (requests.length === 0 && fixed.length === 0) return routes;
+  const everyone = [...requests, ...fixed];
+  const grid = makeGrid(
+    everyone,
+    obstacles,
+    fixed.flatMap((f) => f.points.filter((p) => Number.isInteger(p.x) && Number.isInteger(p.y))),
+  );
   const size = grid.w * grid.h * 4;
   const scratch: Scratch = {
     cost: new Float64Array(size).fill(Infinity),
@@ -319,7 +335,7 @@ export function routeAround(
     while (parent.get(k) !== k) k = parent.get(k)!;
     return k;
   };
-  for (const r of requests) {
+  for (const r of everyone) {
     for (const k of [`from:${r.source}`, `to:${r.target}`]) if (!parent.has(k)) parent.set(k, k);
     parent.set(find(`from:${r.source}`), find(`to:${r.target}`));
   }
@@ -331,9 +347,17 @@ export function routeAround(
     return id;
   };
 
+  // Player-shaped wires are fixed: record them first.
+  for (const f of fixed) {
+    if (f.points.every((p) => Number.isInteger(p.x) && Number.isInteger(p.y))) {
+      occupy(grid, f.points, signalOf(f));
+    }
+    routes.set(f.id, [...f.points]);
+  }
+
   // Reserve every pin and the cell just outside it for its own signal first: those cells are
   // the only way in or out, so no other wire may claim them.
-  for (const r of requests) {
+  for (const r of everyone) {
     const signal = signalOf(r);
     for (const [p, d] of [
       [r.start, r.startDir],

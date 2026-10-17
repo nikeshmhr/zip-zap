@@ -25,6 +25,8 @@ import {
   routeWire,
   routeWires,
   branchPoint,
+  distanceAlong,
+  routeThroughBends,
 } from './geometry.ts';
 import { hitTest } from './hitTest.ts';
 import type { Effect, InteractionContext, Mode, PointerInput } from './interaction.ts';
@@ -34,6 +36,7 @@ import type { LiveSnapshot } from './liveSimulation.ts';
 import { LiveSimulation } from './liveSimulation.ts';
 import { PartView } from './PartView.tsx';
 import { HelpPanel } from './HelpPanel.tsx';
+import type { FixedRoute } from './router.ts';
 import { routeAround } from './router.ts';
 import { wireRequests } from './wireRequests.ts';
 import { shortcutFor } from './shortcuts.ts';
@@ -195,6 +198,13 @@ export function CircuitEditor(props: CircuitEditorProps) {
         case 'cancelGesture':
           s.cancelGesture();
           break;
+        case 'moveBend': {
+          const wire = s.circuit.wires.find((w) => w.id === effect.wire);
+          if (!wire?.bends) break;
+          const bends = wire.bends.map((b, i) => (i === effect.index ? effect.point : b));
+          s.setBends(effect.wire, bends);
+          break;
+        }
         case 'toggleInput':
           s.toggleInput(effect.name);
           break;
@@ -352,15 +362,38 @@ export function CircuitEditor(props: CircuitEditorProps) {
   const dragging = mode.kind === 'dragging';
   const wires = useMemo(() => {
     const { requests, obstacles } = wireRequests(circuit, geomOf);
+    // Wires the player has bent follow their bends; the router keeps others clear of them.
+    const bendsOf = new Map(circuit.wires.map((w) => [w.id, w.bends]));
+    const fixed = requests.flatMap((r): FixedRoute[] => {
+      const bends = bendsOf.get(r.id);
+      return bends?.length
+        ? [{ ...r, points: routeThroughBends(r.start, r.startDir, bends, r.end, r.endDir) }]
+        : [];
+    });
+    const free = requests.filter((r) => !bendsOf.get(r.id)?.length);
     const routes =
       dragging && requests.length > LIVE_ROUTING_LIMIT
-        ? routeWires(requests, obstacles)
-        : routeAround(requests, obstacles);
+        ? new Map([
+            ...routeWires(free, obstacles),
+            ...fixed.map((f) => [f.id, [...f.points]] as const),
+          ])
+        : routeAround(free, obstacles, undefined, fixed);
     return circuit.wires.flatMap((wire) => {
       const points = routes.get(wire.id);
       return points ? [{ wire, points }] : [];
     });
   }, [circuit, geomOf, dragging]);
+
+  /** Adds a bend where the player double-clicked a wire, in order along the wire. */
+  const addBend = (wireId: string, at: Point) => {
+    const entry = wires.find((w) => w.wire.id === wireId);
+    if (!entry) return;
+    const point = { x: Math.round(at.x), y: Math.round(at.y) };
+    const bends = entry.wire.bends ?? [];
+    const where = distanceAlong(entry.points, point);
+    const index = bends.filter((b) => distanceAlong(entry.points, b) < where).length;
+    store.getState().setBends(wireId, [...bends.slice(0, index), point, ...bends.slice(index)]);
+  };
 
   // The signal under the pointer: every wire from the same output (or joined at one input).
   const hoveredSignal = useMemo(() => {
@@ -385,7 +418,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
       for (const { wire, points } of wires) {
         const ref = wire[end];
         const key = `${ref.comp}|${ref.pin}`;
-        const route = end === 'from' ? points : [...points].reverse();
+        const route = end === 'from' ? [...points] : [...points].reverse();
         byPin.set(key, [...(byPin.get(key) ?? []), route]);
       }
       for (const [key, routes] of byPin) {
@@ -505,8 +538,23 @@ export function CircuitEditor(props: CircuitEditorProps) {
           run(pointerMove(modeRef.current, toInput(e), context()));
         }}
         onPointerUp={(e) => run(pointerUp(modeRef.current, toInput(e), context()))}
-        onDoubleClick={(under) => {
+        onDoubleClick={(under, world) => {
           const hit = hitTest(under);
+          // Bends are edits; looking inside chips works in read-only views too.
+          if (readOnly && hit.type !== 'part') return;
+          if (hit.type === 'bend') {
+            const wire = store.getState().circuit.wires.find((w) => w.id === hit.wire);
+            if (wire?.bends)
+              store.getState().setBends(
+                hit.wire,
+                wire.bends.filter((_, i) => i !== hit.index),
+              );
+            return;
+          }
+          if (hit.type === 'wire') {
+            addBend(hit.id, world);
+            return;
+          }
           if (hit.type !== 'part') return;
           const kind = store.getState().circuit.components.find((c) => c.id === hit.id)?.kind;
           if (kind && isChipKind(kind)) onOpenChip?.(kind);
@@ -601,6 +649,24 @@ export function CircuitEditor(props: CircuitEditorProps) {
           />
         ))}
         {preview && <path className={wireStyles.preview} d={preview} />}
+        {wires
+          .filter(({ wire }) => selectedWires.has(wire.id) && wire.bends?.length)
+          .flatMap(({ wire }) =>
+            wire.bends!.map((b, i) => (
+              <rect
+                key={`${wire.id}-${i}`}
+                className={wireStyles.bend}
+                data-bend={`${wire.id}|${i}`}
+                x={b.x - 0.35}
+                y={b.y - 0.35}
+                width={0.7}
+                height={0.7}
+                rx={0.12}
+              >
+                <title>Drag to move; double-click to remove</title>
+              </rect>
+            )),
+          )}
         {box && <rect className={styles.box} {...box} />}
       </Canvas>
     </div>

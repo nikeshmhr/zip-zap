@@ -36,7 +36,8 @@ export type Mode =
       /** The pin the wire would connect to if released now (snapped when close). */
       target?: PinEnd;
     }
-  | { kind: 'boxSelecting'; start: Point; current: Point; base: Selection };
+  | { kind: 'boxSelecting'; start: Point; current: Point; base: Selection }
+  | { kind: 'draggingBend'; wire: string; index: number };
 
 export type Effect =
   | { type: 'select'; selection: Selection }
@@ -45,6 +46,7 @@ export type Effect =
   | { type: 'moveParts'; ids: readonly string[]; delta: Point }
   /** Abandon the gesture, restoring the circuit from before it started. */
   | { type: 'cancelGesture' }
+  | { type: 'moveBend'; wire: string; index: number; point: Point }
   | { type: 'connect'; from: PinEnd; to: PinEnd }
   | { type: 'toggleInput'; name: string };
 
@@ -123,6 +125,15 @@ export function pointerDown(mode: Mode, input: PointerInput, ctx: InteractionCon
       return [pressing, [{ type: 'select', selection: { components: [hit.id], wires: [] } }]];
     }
 
+    case 'bend':
+      return [
+        { kind: 'draggingBend', wire: hit.wire, index: hit.index },
+        [
+          { type: 'select', selection: { components: [], wires: [hit.wire] } },
+          { type: 'beginGesture' },
+        ],
+      ];
+
     case 'wire': {
       const next = additive
         ? { ...selection, wires: toggled(selection.wires, hit.id) }
@@ -163,6 +174,19 @@ export function pointerMove(mode: Mode, input: PointerInput, ctx: InteractionCon
       if (delta.x === 0 && delta.y === 0) return [mode, []];
       return [{ ...mode, applied: total }, [{ type: 'moveParts', ids: mode.ids, delta }]];
     }
+
+    case 'draggingBend':
+      return [
+        mode,
+        [
+          {
+            type: 'moveBend',
+            wire: mode.wire,
+            index: mode.index,
+            point: { x: Math.round(world.x), y: Math.round(world.y) },
+          },
+        ],
+      ];
 
     case 'wiring': {
       const want = mode.from.dir === 'out' ? 'in' : 'out';
@@ -206,6 +230,7 @@ export function pointerUp(mode: Mode, input: PointerInput, ctx: InteractionConte
     }
 
     case 'dragging':
+    case 'draggingBend':
       return [IDLE, [{ type: 'endGesture' }]];
 
     case 'wiring': {
@@ -225,5 +250,8 @@ export function pointerUp(mode: Mode, input: PointerInput, ctx: InteractionConte
 
 /** Escape or a lost pointer: abandon any gesture (undoing a drag) and return to idle. */
 export function cancel(mode: Mode): Transition {
-  return [IDLE, mode.kind === 'dragging' ? [{ type: 'cancelGesture' }] : []];
+  return [
+    IDLE,
+    mode.kind === 'dragging' || mode.kind === 'draggingBend' ? [{ type: 'cancelGesture' }] : [],
+  ];
 }

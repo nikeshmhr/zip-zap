@@ -206,3 +206,17 @@ describe('input switches', () => {
     ]);
   });
 });
+
+describe('dragging a bend point', () => {
+  it('selects its wire, moves it in whole grid steps, and closes the gesture', () => {
+    const [mode, down] = pointerDown(IDLE, at(5, 5, { type: 'bend', wire: 'w2', index: 1 }), ctx());
+    expect(down).toEqual([
+      { type: 'select', selection: { components: [], wires: ['w2'] } },
+      { type: 'beginGesture' },
+    ]);
+    const [, moved] = pointerMove(mode, at(7.4, 2.6), ctx());
+    expect(moved).toEqual([{ type: 'moveBend', wire: 'w2', index: 1, point: { x: 7, y: 3 } }]);
+    expect(pointerUp(mode, at(7, 3), ctx())).toEqual([IDLE, [{ type: 'endGesture' }]]);
+    expect(cancel(mode)).toEqual([IDLE, [{ type: 'cancelGesture' }]]);
+  });
+});

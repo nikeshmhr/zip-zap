@@ -4,6 +4,7 @@ import { primitiveResolver } from '../../src/engine/primitives.ts';
 import {
   addComponent,
   sanitizeCircuit,
+  setWireBends,
   deleteItems,
   duplicateComponents,
   isEditable,
@@ -135,5 +136,16 @@ describe('sanitizeCircuit', () => {
   it('returns a clean circuit unchanged', () => {
     const c = nandCircuit();
     expect(sanitizeCircuit(c, primitiveResolver)).toEqual({ circuit: c, removed: 0 });
+  });
+});
+
+describe('setWireBends', () => {
+  it('sets, rounds and removes bends, and leaves the circuit alone when nothing changes', () => {
+    const c = nandCircuit();
+    const bent = setWireBends(c, 'w1', [{ x: 4.4, y: 6.6 }]);
+    expect(bent.wires.find((w) => w.id === 'w1')?.bends).toEqual([{ x: 4, y: 7 }]);
+    expect(setWireBends(bent, 'w1', [{ x: 4, y: 7 }])).toBe(bent);
+    expect(setWireBends(bent, 'w1', []).wires.find((w) => w.id === 'w1')?.bends).toBeUndefined();
+    expect(setWireBends(c, 'ghost', [{ x: 1, y: 1 }])).toBe(c);
   });
 });

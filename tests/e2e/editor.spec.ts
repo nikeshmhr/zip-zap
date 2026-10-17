@@ -248,3 +248,30 @@ test('hovering a wire highlights its whole signal', async ({ page }) => {
   await expect(page.locator('[data-wire="w2"]')).toHaveAttribute('data-highlighted');
   await expect(page.locator('[data-wire="w3"]')).not.toHaveAttribute('data-highlighted');
 });
+
+test('bend points: double-click a wire to add one, drag it, double-click it to remove', async ({
+  page,
+}) => {
+  await drawWire(page, 'in:A|out|out', 'p1|a|in');
+  const mid = await wireMidpoint(page, 'w1');
+  await page.mouse.dblclick(mid.x, mid.y + 0);
+  const bend = page.locator('[data-bend="w1|0"]');
+  await expect(bend).toBeVisible();
+
+  const before = await page.locator('[data-wire="w1"] path').first().getAttribute('d');
+  const box = (await bend.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 10, box.y + 90, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.locator('[data-wire="w1"] path').first()).not.toHaveAttribute('d', before!);
+
+  // Undo puts it back where it was added, in one step.
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await page.keyboard.press(`${mod}+z`);
+  await expect(page.locator('[data-wire="w1"] path').first()).toHaveAttribute('d', before!);
+
+  const handle = (await bend.boundingBox())!;
+  await page.mouse.dblclick(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await expect(page.locator('[data-bend]')).toHaveCount(0);
+});

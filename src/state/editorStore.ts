@@ -15,6 +15,7 @@ import {
   duplicateComponents,
   moveComponents,
   rotateComponents,
+  setWireBends,
 } from './editing.ts';
 import type { ConnectResult, PinEnd, WiringContext } from './wiring.ts';
 import { connect } from './wiring.ts';
@@ -76,6 +77,8 @@ export interface EditorActions {
   connect(a: PinEnd, b: PinEnd, ctx: WiringContext): ConnectResult;
   moveSelection(delta: Point): void;
   moveParts(ids: readonly string[], delta: Point): void;
+  /** Replaces a wire's bend points. */
+  setBends(wireId: string, bends: readonly Point[]): void;
   rotateSelection(): void;
   /** Copies the selected parts, offset by `offset` grid units (default: down-right). */
   duplicateSelection(offset?: Point): void;
@@ -203,6 +206,8 @@ export function createEditorStore(
 
     moveSelection: (delta) =>
       get().commit((c) => moveComponents(c, get().selection.components, delta, opts)),
+
+    setBends: (wireId, bends) => get().commit((c) => setWireBends(c, wireId, bends)),
 
     moveParts: (ids, delta) => get().commit((c) => moveComponents(c, ids, delta, opts)),
 

@@ -93,3 +93,15 @@
 .wire[data-highlighted][data-on] .line {
   filter: drop-shadow(0 0 0.35px var(--selection));
 }
+
+/* Bend points on a selected wire: drag to move, double-click to remove. */
+.bend {
+  fill: var(--surface);
+  stroke: var(--selection);
+  stroke-width: 0.12;
+  cursor: move;
+}
+
+.bend:hover {
+  fill: var(--selection);
+}

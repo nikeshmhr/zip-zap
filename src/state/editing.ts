@@ -222,3 +222,18 @@ export function sanitizeCircuit(
     circuit.components.length - components.length + (circuit.wires.length - wires.length);
   return removed === 0 ? { circuit, removed } : { circuit: { components, wires }, removed };
 }
+
+/** Replaces a wire's bend points (an empty list removes them). */
+export function setWireBends(circuit: Circuit, wireId: string, bends: readonly Point[]): Circuit {
+  const wire = circuit.wires.find((w) => w.id === wireId);
+  if (!wire) return circuit;
+  const same =
+    (wire.bends?.length ?? 0) === bends.length &&
+    bends.every((b, i) => wire.bends?.[i]?.x === b.x && wire.bends[i]?.y === b.y);
+  if (same) return circuit;
+  return produce(circuit, (draft) => {
+    const w = draft.wires.find((x) => x.id === wireId)!;
+    if (bends.length === 0) delete w.bends;
+    else w.bends = bends.map((b) => ({ x: Math.round(b.x), y: Math.round(b.y) }));
+  });
+}

@@ -380,3 +380,52 @@ export function findFreeSpot(rect: Rect, taken: readonly Rect[], maxRadius = 40)
   }
   return { x: rect.x, y: rect.y };
 }
+
+/**
+ * A wire the player has shaped with bend points (T7.4): out of the start pin, through each
+ * bend in order (horizontal, then vertical, between consecutive points), and into the end pin.
+ */
+export function routeThroughBends(
+  start: Point,
+  startDir: Point,
+  bends: readonly Point[],
+  end: Point,
+  endDir: Point,
+): Point[] {
+  const s1 = { x: start.x + startDir.x, y: start.y + startDir.y };
+  const e1 = { x: end.x + endDir.x, y: end.y + endDir.y };
+  const points: Point[] = [start, s1];
+  for (const p of [...bends, e1]) {
+    const last = points.at(-1)!;
+    if (last.x !== p.x && last.y !== p.y) points.push({ x: p.x, y: last.y });
+    points.push(p);
+  }
+  points.push(end);
+  return simplify(points);
+}
+
+/** How far along a route the point nearest to `p` lies (for ordering bend points). */
+export function distanceAlong(points: readonly Point[], p: Point): number {
+  let best = { gap: Infinity, along: 0 };
+  let travelled = 0;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]!;
+    const b = points[i]!;
+    const length = Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
+    const t =
+      length === 0
+        ? 0
+        : Math.max(
+            0,
+            Math.min(
+              1,
+              ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / (length * length),
+            ),
+          );
+    const q = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    const gap = Math.abs(q.x - p.x) + Math.abs(q.y - p.y);
+    if (gap < best.gap) best = { gap, along: travelled + length * t };
+    travelled += length;
+  }
+  return best.along;
+}

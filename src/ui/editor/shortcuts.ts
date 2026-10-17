@@ -65,6 +65,8 @@ export function shortcutList(mod: string): { keys: string; action: string }[] {
     { keys: `${mod} Z`, action: 'Undo' },
     { keys: `${mod} ⇧ Z`, action: 'Redo' },
     { keys: 'Shift + click', action: 'Add to selection' },
+    { keys: 'Double-click wire', action: 'Add a bend point (drag it; double-click to remove)' },
+    { keys: 'Double-click chip', action: 'Look inside it' },
     { keys: 'Space + drag', action: 'Pan (or middle-drag, or scroll)' },
     { keys: `${mod} + scroll`, action: 'Zoom (or pinch)' },
     { keys: 'F', action: 'Fit the circuit in view' },
