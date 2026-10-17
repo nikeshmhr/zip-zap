@@ -4,15 +4,22 @@
  */
 import { create } from 'zustand';
 import type { Save } from '../persistence/save.ts';
-import { CURRENT_VERSION, loadSave, writeSave } from '../persistence/save.ts';
+import { CURRENT_VERSION, SAVE_KEY, loadSave, writeSave } from '../persistence/save.ts';
 import { allCircuits, onCircuitChange, seedCircuits, useProgress } from './session.ts';
 import { useSettings } from './settings.ts';
 
 export const AUTOSAVE_DELAY_MS = 500;
 
-/** A message for the player about their save (e.g. it was damaged and set aside). */
-export const useSaveNotice = create<{ message?: string; dismiss(): void }>()((set) => ({
-  dismiss: () => set({ message: undefined }),
+export interface SaveNotice {
+  /** A message for the player about their save (e.g. it was damaged and set aside). */
+  message?: string;
+  /** An optional button, e.g. "Reload". */
+  action?: { label: string; run(): void };
+  dismiss(): void;
+}
+
+export const useSaveNotice = create<SaveNotice>()((set) => ({
+  dismiss: () => set({ message: undefined, action: undefined }),
 }));
 
 export function hydrate(save: Save) {
@@ -87,4 +94,26 @@ export function initPersistence(storage: Storage): Autosave {
     });
   }
   return startAutosave(storage);
+}
+
+/**
+ * When another tab writes the save, this tab stops saving (so the two can't overwrite each
+ * other, or undo an import or reset done there) and offers to reload. Returns an unsubscribe.
+ */
+export function watchOtherTabs(
+  target: Pick<Window, 'addEventListener' | 'removeEventListener'>,
+  autosave: Autosave,
+  reload: () => void,
+): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== SAVE_KEY && event.key !== null) return;
+    autosave.stop();
+    useSaveNotice.setState({
+      message:
+        'Zip Zap is open in another tab, so this tab has stopped saving. Reload to continue here with the latest progress.',
+      action: { label: 'Reload', run: reload },
+    });
+  };
+  target.addEventListener('storage', onStorage);
+  return () => target.removeEventListener('storage', onStorage);
 }

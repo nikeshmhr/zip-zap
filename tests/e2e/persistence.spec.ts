@@ -81,3 +81,15 @@ test('export, then import into a fresh browser, restores the same state', async 
   await expect(other.locator('html')).toHaveAttribute('data-theme', 'dark');
   await fresh.close();
 });
+
+test('a second tab stops the first from overwriting its progress', async ({ page, context }) => {
+  await page.goto('/#/map');
+  const other = await context.newPage();
+  await other.goto('/#/map');
+  await unlockLevel(other, '1.1');
+  await other.waitForTimeout(700); // the other tab saves
+
+  await expect(page.getByRole('alert')).toContainText('open in another tab');
+  await page.getByRole('button', { name: 'Reload' }).click();
+  await expect(page.getByRole('link', { name: /Continue: 1.1 NOT/ })).toBeVisible();
+});

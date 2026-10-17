@@ -17,6 +17,11 @@ export function AppShell({ route, children }: { route: Route; children: ReactNod
       {notice.message && (
         <div className={styles.notice} role="alert">
           <span>{notice.message}</span>
+          {notice.action && (
+            <button type="button" onClick={notice.action.run}>
+              {notice.action.label}
+            </button>
+          )}
           <button type="button" onClick={notice.dismiss}>
             Dismiss
           </button>

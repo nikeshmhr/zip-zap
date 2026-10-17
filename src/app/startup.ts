@@ -4,7 +4,7 @@
 import type { Save } from '../persistence/save.ts';
 import { writeSave } from '../persistence/save.ts';
 import type { Autosave } from '../state/persist.ts';
-import { initPersistence } from '../state/persist.ts';
+import { initPersistence, watchOtherTabs } from '../state/persist.ts';
 import { applySettings, useSettings } from '../state/settings.ts';
 
 /** localStorage, or an in-memory stand-in where the browser blocks it (e.g. some private modes). */
@@ -36,6 +36,7 @@ export function startUp() {
   active = { autosave, storage: store };
   // Save straight away when the tab is hidden or closed, rather than waiting for the debounce.
   window.addEventListener('pagehide', () => autosave.flush());
+  watchOtherTabs(window, autosave, () => window.location.reload());
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') autosave.flush();
   });

@@ -2,7 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SAVE_KEY, emptySave } from '../../src/persistence/save.ts';
 import { startCircuit } from '../../src/state/editing.ts';
 import type { Autosave } from '../../src/state/persist.ts';
-import { collectSave, hydrate, initPersistence, useSaveNotice } from '../../src/state/persist.ts';
+import {
+  collectSave,
+  hydrate,
+  initPersistence,
+  useSaveNotice,
+  watchOtherTabs,
+} from '../../src/state/persist.ts';
 import { levelEditor, resetEditors, useProgress } from '../../src/state/session.ts';
 import { useSettings } from '../../src/state/settings.ts';
 import { MemoryStorage } from '../support/memoryStorage.ts';
@@ -106,5 +112,39 @@ describe('autosave', () => {
     useProgress.getState().revealHint('2.1');
     autosave.flush();
     expect(useSaveNotice.getState().message).toMatch(/isn't letting Zip Zap save/);
+  });
+});
+
+describe('other tabs', () => {
+  it('stops saving and offers a reload when another tab writes the save', () => {
+    const storage = new MemoryStorage();
+    autosave = initPersistence(storage);
+    const target = new EventTarget();
+    const reload = vi.fn();
+    watchOtherTabs(target as unknown as Window, autosave, reload);
+
+    // Another tab saved (e.g. imported or reset).
+    target.dispatchEvent(Object.assign(new Event('storage'), { key: SAVE_KEY }));
+    expect(useSaveNotice.getState().message).toMatch(/another tab/);
+
+    // This tab's later changes must not overwrite it.
+    useProgress.getState().revealHint('2.1');
+    autosave.flush();
+    vi.advanceTimersByTime(1000);
+    expect(storage.getItem(SAVE_KEY)).toBeNull();
+
+    useSaveNotice.getState().action?.run();
+    expect(reload).toHaveBeenCalled();
+  });
+
+  it('ignores storage events for other keys', () => {
+    const storage = new MemoryStorage();
+    autosave = initPersistence(storage);
+    const target = new EventTarget();
+    watchOtherTabs(target as unknown as Window, autosave, () => {});
+    target.dispatchEvent(Object.assign(new Event('storage'), { key: 'something-else' }));
+    useProgress.getState().revealHint('2.1');
+    autosave.flush();
+    expect(storage.getItem(SAVE_KEY)).not.toBeNull();
   });
 });
