@@ -1,7 +1,7 @@
 /**
  * Runs a level's tests against a player's circuit (plan §4.5, spec §7).
  */
-import type { CombFn } from './chips.ts';
+import type { CombFn, SeqModel } from './chips.ts';
 import { compile } from './compile.ts';
 import type { Bits, Circuit } from './model.ts';
 import { enumerateRows, toBit } from './model.ts';
@@ -16,7 +16,26 @@ export interface CombinationalGoal {
   display?: 'table' | { formula: string };
 }
 
-export type Goal = CombinationalGoal;
+/** One step of a sequential test: change some inputs, let the circuit settle, check outputs. */
+export interface Step {
+  /** Inputs to change; others keep their previous value (all start OFF). */
+  set: Partial<Bits>;
+  /** Explicit expected outputs. Omit to use the reference model's outputs. */
+  expect?: Partial<Bits>;
+}
+
+export interface SequentialGoal {
+  kind: 'sequential';
+  /** Reference model: produces expected outputs, evaluated once per step with every input. */
+  model: SeqModel;
+  /**
+   * Each sequence runs from a reset. Sequences start with a forcing step, and data inputs never
+   * change in the same step as a rising clock edge (spec §15.7).
+   */
+  sequences: readonly (readonly Step[])[];
+}
+
+export type Goal = CombinationalGoal | SequentialGoal;
 
 export interface TestSpec {
   /** Level input pins, in truth-table column order. */
@@ -28,7 +47,11 @@ export interface TestSpec {
 export type CaseStatus = 'pass' | 'fail' | 'unstable';
 
 export interface CaseResult {
+  /** Position in the whole report. */
   index: number;
+  /** Sequential levels: which sequence and step this case is. */
+  sequence?: number;
+  step?: number;
   /** Every level input's value for this case. */
   inputs: Bits;
   /** Expected values of the outputs that are checked. */
@@ -60,7 +83,10 @@ export function runTests(
   }
 
   const sim = new Simulator(compiled.netlist);
-  const cases = runCombinational(sim, spec, spec.goal);
+  const cases =
+    spec.goal.kind === 'combinational'
+      ? runCombinational(sim, spec, spec.goal)
+      : runSequential(sim, spec, spec.goal);
   return { passed: cases.every((c) => c.status === 'pass'), issues: [], cases };
 }
 
@@ -75,6 +101,44 @@ function runCombinational(sim: Simulator, spec: TestSpec, goal: CombinationalGoa
     const actual = sim.readOutputs();
     return { index, inputs, expected, actual, status: judge(stable, expected, actual) };
   });
+}
+
+function runSequential(sim: Simulator, spec: TestSpec, goal: SequentialGoal): CaseResult[] {
+  const cases: CaseResult[] = [];
+  goal.sequences.forEach((steps, sequence) => {
+    sim.reset();
+    let state = goal.model.init();
+    const inputs: Bits = Object.fromEntries(spec.inputs.map((name) => [name, 0]));
+
+    steps.forEach((step, stepIndex) => {
+      Object.assign(inputs, step.set);
+      sim.setInputs(step.set);
+      const { stable } = sim.settle();
+
+      const result = goal.model.step({ ...inputs }, state);
+      state = result.state;
+      const expected: Bits = {};
+      if (step.expect) {
+        for (const [name, value] of Object.entries(step.expect)) {
+          if (value !== undefined) expected[name] = value;
+        }
+      } else {
+        for (const name of spec.outputs) expected[name] = toBit(result.outputs[name]);
+      }
+
+      const actual = sim.readOutputs();
+      cases.push({
+        index: cases.length,
+        sequence,
+        step: stepIndex,
+        inputs: { ...inputs },
+        expected,
+        actual,
+        status: judge(stable, expected, actual),
+      });
+    });
+  });
+  return cases;
 }
 
 function judge(stable: boolean, expected: Bits, actual: Bits): CaseStatus {

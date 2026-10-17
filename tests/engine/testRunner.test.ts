@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { buildCircuit } from '../../src/engine/builder.ts';
 import type { CircuitBuilder } from '../../src/engine/builder.ts';
+import type { SeqModel } from '../../src/engine/chips.ts';
+import type { Bit } from '../../src/engine/model.ts';
 import { toBit } from '../../src/engine/model.ts';
 import { primitiveResolver } from '../../src/engine/primitives.ts';
 import type { TestSpec } from '../../src/engine/testRunner.ts';
 import { runTests } from '../../src/engine/testRunner.ts';
-import { nand, or, xor } from './helpers.ts';
+import { and, nand, not, or, xor } from './helpers.ts';
 
 const xorSpec: TestSpec = {
   inputs: ['A', 'B'],
@@ -79,5 +81,94 @@ describe('runTests: combinational', () => {
     });
     expect(report.error).toBe('invalid');
     expect(report.cases).toEqual([]);
+  });
+});
+
+describe('runTests: sequential', () => {
+  /** Reference: while EN is on, Q follows D; otherwise Q holds. */
+  const dLatchModel: SeqModel<Bit> = {
+    init: () => 0,
+    step: ({ D = 0, EN = 0 }, q) => {
+      const next = EN ? D : q;
+      return { outputs: { Q: next }, state: next };
+    },
+  };
+
+  const dLatchSpec: TestSpec = {
+    inputs: ['D', 'EN'],
+    outputs: ['Q'],
+    goal: {
+      kind: 'sequential',
+      model: dLatchModel,
+      sequences: [
+        [
+          { set: { EN: 1, D: 0 } }, // forcing step
+          { set: { D: 1 } }, // transparent: Q follows D
+          { set: { EN: 0 } }, // hold 1
+          { set: { D: 0 } }, // still hold 1
+          { set: { EN: 1 } }, // transparent again: Q = 0
+        ],
+        [
+          { set: { EN: 1, D: 1 } }, // a second sequence starts from reset
+          { set: { EN: 0 } },
+        ],
+      ],
+    },
+  };
+
+  /** Gated SR latch from NANDs. */
+  const dLatch = (b: CircuitBuilder) => {
+    const nS = nand(b, 'D', 'EN');
+    const nR = nand(b, not(b, 'D'), 'EN');
+    const q = b.add('nand');
+    const qn = b.add('nand');
+    b.wire(nS, q.in('a'));
+    b.wire(qn.out('out'), q.in('b'));
+    b.wire(nR, qn.in('a'));
+    b.wire(q.out('out'), qn.in('b'));
+    b.wire(q.out('out'), 'Q');
+  };
+
+  it('passes a correct D latch, numbering cases by sequence and step', () => {
+    const report = run(dLatchSpec, dLatch);
+    expect(report.passed).toBe(true);
+    expect(report.cases.map((c) => [c.index, c.sequence, c.step])).toEqual([
+      [0, 0, 0],
+      [1, 0, 1],
+      [2, 0, 2],
+      [3, 0, 3],
+      [4, 0, 4],
+      [5, 1, 0],
+      [6, 1, 1],
+    ]);
+    expect(report.cases[3]).toMatchObject({ inputs: { D: 0, EN: 0 }, expected: { Q: 1 } });
+  });
+
+  it('fails a "latch" missing its feedback at the first hold step', () => {
+    const report = run(dLatchSpec, (b) => b.wire(and(b, 'D', 'EN'), 'Q'));
+    expect(report.passed).toBe(false);
+    const firstFail = report.cases.find((c) => c.status !== 'pass');
+    expect(firstFail).toMatchObject({
+      sequence: 0,
+      step: 2,
+      expected: { Q: 1 },
+      actual: { Q: 0 },
+      status: 'fail',
+    });
+  });
+
+  it('checks only the listed outputs when a step has explicit expectations', () => {
+    const spec: TestSpec = {
+      inputs: ['D', 'EN'],
+      outputs: ['Q', 'X'],
+      goal: {
+        kind: 'sequential',
+        model: dLatchModel,
+        sequences: [[{ set: { EN: 1, D: 1 }, expect: { Q: 1 } }]],
+      },
+    };
+    const report = run(spec, dLatch); // X is never driven, but isn't checked
+    expect(report.passed).toBe(true);
+    expect(report.cases[0]!.expected).toEqual({ Q: 1 });
   });
 });
