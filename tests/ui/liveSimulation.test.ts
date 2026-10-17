@@ -89,3 +89,28 @@ describe('LiveSimulation', () => {
     expect(snap.pin('out:OUT', 'in')).toBe(0);
   });
 });
+
+describe('LiveSimulation replay', () => {
+  it('powers on and plays steps in order, showing the state at the last one', () => {
+    const live = new LiveSimulation(primitiveResolver);
+    live.evaluate(latch, { nS: 1, nR: 1 });
+    // Set, then hold: Q stays 1 even though the inputs at the end are "hold".
+    const steps = [
+      { nS: 1, nR: 0 },
+      { nS: 0, nR: 1 },
+      { nS: 1, nR: 1 },
+    ] as const;
+    const snap = live.evaluate(latch, steps[2], { token: 1, steps });
+    expect(snap.pin('out:Q', 'in')).toBe(1);
+
+    // A different replay ending in the same inputs gives a different state.
+    const reset = [
+      { nS: 0, nR: 1 },
+      { nS: 1, nR: 0 },
+      { nS: 1, nR: 1 },
+    ] as const;
+    expect(live.evaluate(latch, reset[2], { token: 2, steps: reset }).pin('out:Q', 'in')).toBe(0);
+    // The same token again doesn't replay.
+    expect(live.evaluate(latch, reset[2], { token: 2, steps }).pin('out:Q', 'in')).toBe(0);
+  });
+});

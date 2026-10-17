@@ -37,6 +37,11 @@ export interface EditorState {
   inputs: Bits;
   /** Circuit at the start of the current gesture, if one is in progress. */
   gestureBase: Circuit | null;
+  /**
+   * A request to replay the live circuit from power-on through these input states (scrubbing
+   * a memory level's steps). The token changes with every request.
+   */
+  replay: { token: number; steps: readonly Bits[] } | null;
 }
 
 export interface EditorActions {
@@ -66,6 +71,8 @@ export interface EditorActions {
 
   select(selection: Selection): void;
   setInput(name: string, value: Bit): void;
+  /** Powers the live circuit on and plays these input states in order (see `replay`). */
+  replaySteps(steps: readonly Bits[]): void;
   toggleInput(name: string): void;
 }
 
@@ -97,6 +104,7 @@ export function createEditorStore(
     future: [],
     inputs,
     gestureBase: null,
+    replay: null,
 
     load: (circuit) =>
       set({ circuit, selection: EMPTY_SELECTION, past: [], future: [], gestureBase: null }),
@@ -202,6 +210,12 @@ export function createEditorStore(
     select: (selection) => set({ selection }),
 
     setInput: (name, value) => set({ inputs: { ...get().inputs, [name]: value } }),
+
+    replaySteps: (steps) =>
+      set({
+        inputs: { ...(steps.at(-1) ?? {}) },
+        replay: { token: (get().replay?.token ?? 0) + 1, steps },
+      }),
 
     toggleInput: (name) => {
       const { inputs } = get();

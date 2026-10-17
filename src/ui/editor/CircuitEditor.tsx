@@ -75,10 +75,14 @@ export function CircuitEditor(props: CircuitEditorProps) {
   const circuit = useStore(store, (s) => s.circuit);
   const selection = useStore(store, (s) => s.selection);
   const inputs = useStore(store, (s) => s.inputs);
+  const replay = useStore(store, (s) => s.replay);
 
   // Live simulation: one simulator per circuit version, so latches remember between toggles.
   const live = useMemo(() => new LiveSimulation(resolve, options), [resolve, options]);
-  const snapshot = useMemo(() => live.evaluate(circuit, inputs), [live, circuit, inputs]);
+  const snapshot = useMemo(
+    () => live.evaluate(circuit, inputs, replay),
+    [live, circuit, inputs, replay],
+  );
 
   const geomOf = useMemo(() => createGeometryLookup(resolve, displayName), [resolve, displayName]);
 

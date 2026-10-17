@@ -11,6 +11,7 @@ import type { TestReport } from '../../engine/testRunner.ts';
 import { planSequences, runTests } from '../../engine/testRunner.ts';
 import type { EditorStore } from '../../state/editorStore.ts';
 import { Hints } from './Hints.tsx';
+import type { StepRef } from './StepTable.tsx';
 import { StepTable } from './StepTable.tsx';
 import { TruthTable } from './TruthTable.tsx';
 import styles from './GoalPanel.module.css';
@@ -38,6 +39,15 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
     );
     setRun({ report, circuit });
     if (report.passed) onSolved?.(report, circuit);
+    // Memory levels: jump to the first step that went wrong.
+    const failure = report.cases.find((c) => c.status !== 'pass');
+    if (
+      goal.kind === 'sequential' &&
+      failure?.sequence !== undefined &&
+      failure.step !== undefined
+    ) {
+      showStep({ sequence: failure.sequence, step: failure.step });
+    }
   };
 
   const rows = useMemo(() => {
@@ -54,6 +64,17 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
     () => (goal.kind === 'sequential' ? planSequences(level, goal) : []),
     [goal, level],
   );
+
+  // The step shown on the canvas, valid while the switches and circuit are as it left them.
+  const [shown, setShown] = useState<{ ref: StepRef; inputs: Bits; circuit: Circuit } | null>(null);
+  const shownStep =
+    shown && shown.inputs === live && shown.circuit === circuit ? shown.ref : undefined;
+
+  const showStep = (ref: StepRef) => {
+    const steps = plan[ref.sequence]?.slice(0, ref.step + 1).map((s) => s.inputs) ?? [];
+    store.getState().replaySteps(steps);
+    setShown({ ref, inputs: store.getState().inputs, circuit: store.getState().circuit });
+  };
 
   const setSwitches = (bits: Bits) => {
     const s = store.getState();
@@ -87,6 +108,8 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
             plan={plan}
             clockPin={level.clock?.pin}
             results={run && !stale ? run.report.cases : undefined}
+            selected={shownStep}
+            onSelect={showStep}
           />
         )}
       </section>

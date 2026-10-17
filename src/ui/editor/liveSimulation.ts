@@ -39,6 +39,7 @@ export class LiveSimulation {
   private sim: Simulator | null = null;
   private netOf: Map<string, number> | null = null;
   private applied: Bits = {};
+  private replayToken = 0;
   private failure: Omit<LiveSnapshot, 'pin'> | null = null;
 
   private readonly resolve: ComponentResolver;
@@ -49,13 +50,31 @@ export class LiveSimulation {
     this.options = options;
   }
 
-  evaluate(circuit: Circuit, inputs: Readonly<Bits>): LiveSnapshot {
+  /**
+   * Simulates `circuit` with `inputs`, continuing from the current state. A new `replay`
+   * request first powers the circuit on and plays its input states in order, exactly as a
+   * test run does, so the circuit shows the state at a chosen step.
+   */
+  evaluate(
+    circuit: Circuit,
+    inputs: Readonly<Bits>,
+    replay?: { token: number; steps: readonly Bits[] } | null,
+  ): LiveSnapshot {
     if (circuit !== this.circuit) {
       const topology = topologyKey(circuit);
       if (topology !== this.topology) this.load(circuit, topology);
       this.circuit = circuit;
     }
     if (this.failure) return { ...this.failure, pin: OFF };
+    if (replay && replay.token !== this.replayToken) {
+      this.replayToken = replay.token;
+      this.load(circuit, this.topology);
+      for (const step of replay.steps) {
+        this.sim!.setInputs(step);
+        this.sim!.settle();
+        Object.assign(this.applied, step);
+      }
+    }
 
     const sim = this.sim!;
     const changed: Bits = {};
