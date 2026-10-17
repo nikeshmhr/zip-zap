@@ -1,0 +1,170 @@
+.part {
+  cursor: default;
+}
+
+.hit {
+  fill: transparent;
+}
+
+.body,
+.casing,
+.chip {
+  fill: var(--part-fill);
+  stroke: var(--part-stroke);
+  stroke-width: 0.12;
+}
+
+.casing {
+  stroke-width: 0.08;
+  stroke-dasharray: 0.25 0.15;
+}
+
+.chip {
+  stroke-width: 0.1;
+}
+
+.lead {
+  stroke: var(--part-stroke);
+  stroke-width: 0.12;
+  stroke-linecap: round;
+}
+
+.coil {
+  fill: none;
+  stroke: var(--part-stroke);
+  stroke-width: 0.1;
+  stroke-linejoin: round;
+}
+
+.coil[data-on] {
+  stroke: var(--wire-on);
+  stroke-width: 0.16;
+}
+
+.linkage {
+  stroke: var(--text-muted);
+  stroke-width: 0.06;
+  stroke-dasharray: 0.12 0.12;
+}
+
+.arm {
+  stroke: var(--part-stroke);
+  stroke-width: 0.16;
+  stroke-linecap: round;
+  transition: all 120ms ease-out;
+}
+
+.joint {
+  fill: var(--part-stroke);
+}
+
+.bolt {
+  fill: var(--accent);
+}
+
+.tag,
+.constant,
+.ioLabel,
+.chipName,
+.pinLabel {
+  font-family: var(--mono);
+  fill: var(--text);
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.tag {
+  font-size: 0.6px;
+  fill: var(--text-muted);
+}
+
+.constant {
+  font-size: 1px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.ioLabel {
+  font-size: 0.85px;
+  font-weight: 700;
+}
+
+.chipName {
+  font-family: var(--font);
+  font-size: 0.8px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: auto;
+}
+
+.pinLabel {
+  font-size: 0.62px;
+  fill: var(--text-muted);
+}
+
+.toggle {
+  fill: var(--surface-2);
+  stroke: var(--part-stroke);
+  stroke-width: 0.1;
+  cursor: pointer;
+}
+
+.toggle[data-on] {
+  fill: var(--wire-on);
+}
+
+.knob {
+  fill: var(--part-fill);
+  stroke: var(--part-stroke);
+  stroke-width: 0.08;
+  transition: cx 120ms ease-out;
+}
+
+.lamp {
+  fill: var(--surface-2);
+  stroke: var(--part-stroke);
+  stroke-width: 0.12;
+}
+
+.lamp[data-on] {
+  fill: var(--wire-on);
+  filter: drop-shadow(0 0 0.35px var(--wire-on));
+}
+
+.pin {
+  fill: var(--part-fill);
+  stroke: var(--part-stroke);
+  stroke-width: 0.1;
+  cursor: crosshair;
+  transition: r 80ms ease-out;
+}
+
+.pin[data-on] {
+  fill: var(--wire-on);
+}
+
+.pin:hover {
+  r: 0.45;
+  stroke: var(--selection);
+}
+
+.selection {
+  fill: none;
+  stroke: var(--selection);
+  stroke-width: 0.1;
+  stroke-dasharray: 0.3 0.2;
+  pointer-events: none;
+}
+
+.part[data-flagged] .body,
+.part[data-flagged] .chip {
+  stroke: var(--danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arm,
+  .knob,
+  .pin {
+    transition: none;
+  }
+}

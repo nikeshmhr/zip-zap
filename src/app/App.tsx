@@ -1,4 +1,5 @@
 import { AppShell } from '../ui/shell/AppShell.tsx';
+import { GalleryScreen } from '../ui/screens/GalleryScreen.tsx';
 import { Placeholder } from '../ui/screens/Placeholder.tsx';
 import { SandboxScreen } from '../ui/screens/SandboxScreen.tsx';
 import { routeHref, useRoute } from './router.ts';
@@ -20,7 +21,7 @@ export function App() {
       )}
       {route.name === 'sandbox' && <SandboxScreen />}
       {route.name === 'settings' && <Placeholder title="Settings" />}
-      {route.name === 'gallery' && <Placeholder title="Component gallery" />}
+      {route.name === 'gallery' && <GalleryScreen />}
       {route.name === 'notFound' && (
         <Placeholder title="Page not found">
           <p>

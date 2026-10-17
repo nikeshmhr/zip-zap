@@ -98,7 +98,7 @@
   - Done when: store tests cover add/move/delete/wire plus undo/redo.
 - [x] **T3.3 Canvas** · SVG viewBox pan/zoom, dot grid, world ↔ screen coordinate utilities
   - Done when: the coordinate utilities are unit-tested; wheel-zoom keeps the point under the cursor fixed.
-- [ ] **T3.4 Component rendering** · relay and NAND symbols, chip boxes with labelled pins, IO switches and lamps fixed at the canvas edges, rotation
+- [x] **T3.4 Component rendering** · relay and NAND symbols, chip boxes with labelled pins, IO switches and lamps fixed at the canvas edges, rotation
   - Done when: a visual check page renders every component kind.
 - [ ] **T3.5 Interaction state machine** · idle / dragging / wiring / box-select / panning; place from toolbox, move with snapping, multi-select, delete
   - Done when: the state machine has unit tests, and manual use feels smooth.
