@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { catalogue } from '../../src/content/index.ts';
 import { computeMetrics } from '../../src/engine/metrics.ts';
 import { readBus, writeBus } from '../../src/engine/model.ts';
-import { contentSuite } from './harness.ts';
+import { buildCircuit } from '../../src/engine/builder.ts';
+import type { CircuitBuilder } from '../../src/engine/builder.ts';
+import { runTests } from '../../src/engine/testRunner.ts';
+import { CHIP, and, nand, part } from '../../src/content/recipes.ts';
+import { contentSuite, describeFailures } from './harness.ts';
 
 contentSuite('Zip Zap', catalogue);
 
@@ -85,5 +89,76 @@ describe('chapter 3: arithmetic', () => {
         to: { comp: adder!.id, pin: 'CIN' },
       }),
     );
+  });
+});
+
+describe('chapter 4: memory', () => {
+  const play = (id: string, recipe: (b: CircuitBuilder) => void) => {
+    const level = catalogue.level(id);
+    const circuit = buildCircuit(level, recipe, catalogue.resolve);
+    return runTests(
+      circuit,
+      catalogue.resolve,
+      catalogue.testSpec(id),
+      catalogue.validateOptions(id),
+    );
+  };
+
+  it('has 24 levels in total, ending with the Tiny RAM', () => {
+    expect(catalogue.levels).toHaveLength(24);
+    expect(catalogue.levels.at(-1)?.unlocks?.name).toBe('RAM 4×4');
+  });
+
+  it('tells a flip-flop from a latch: a D latch fails the D Flip-Flop level', () => {
+    const report = play('4.3', (b) => {
+      b.wire(part(b, CHIP.dLatch, { D: 'D', EN: 'CLK' }).out('Q'), 'Q');
+    });
+    expect(report.passed).toBe(false);
+  });
+
+  it('accepts a flip-flop built from NAND gates alone (arbitrary power-on state)', () => {
+    /** Gated D latch from NANDs; returns Q. */
+    const gateLatch = (
+      b: CircuitBuilder,
+      d: Parameters<typeof nand>[1],
+      en: Parameters<typeof nand>[1],
+    ) => {
+      const q = b.add('nand');
+      const qn = b.add('nand');
+      b.wire(nand(b, d, en), q.in('a'));
+      b.wire(qn.out('out'), q.in('b'));
+      b.wire(nand(b, nand(b, d, d), en), qn.in('a'));
+      b.wire(q.out('out'), qn.in('b'));
+      return q.out('out');
+    };
+    const report = play('4.3', (b) => {
+      const leader = gateLatch(b, 'D', nand(b, 'CLK', 'CLK'));
+      b.wire(gateLatch(b, leader, 'CLK'), 'Q');
+    });
+    expect(report.passed, describeFailures(report)).toBe(true);
+  });
+
+  it('does not fail a register that gates the clock (MVP decision, spec §15.7)', () => {
+    const report = play('4.4', (b) => {
+      const ff = part(b, CHIP.dff, { D: 'D', CLK: and(b, 'CLK', 'LOAD') });
+      b.wire(ff.out('Q'), 'Q');
+    });
+    expect(report.passed, describeFailures(report)).toBe(true);
+  });
+
+  it('fails a register that ignores LOAD', () => {
+    const report = play('4.4', (b) => {
+      b.wire(part(b, CHIP.dff, { D: 'D', CLK: 'CLK' }).out('Q'), 'Q');
+    });
+    expect(report.passed).toBe(false);
+  });
+
+  it('fails a RAM that writes every word at once', () => {
+    const report = play('4.6', (b) => {
+      const data = Object.fromEntries([0, 1, 2, 3].map((i) => [`D${i}`, `D${i}`]));
+      const reg = part(b, CHIP.register4, { ...data, LOAD: 'LOAD', CLK: 'CLK' });
+      for (const i of [0, 1, 2, 3]) b.wire(reg.out(`Q${i}`), `Q${i}`);
+    });
+    expect(report.passed).toBe(false);
   });
 });

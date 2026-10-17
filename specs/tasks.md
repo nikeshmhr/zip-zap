@@ -81,9 +81,9 @@
   - Done when: the content and chip-consistency tests pass.
 - [x] **T2.6 Chapter 3: Arithmetic** · 3.1–3.4, formula display for 3.3/3.4
   - Done when: the content and chip-consistency tests pass; the subtractor reference uses Adder4 with C_in = 1.
-- [ ] **T2.7 Chapter 4: Memory** · 4.1–4.6 with step sequences
+- [x] **T2.7 Chapter 4: Memory** · 4.1–4.6 with step sequences
   - Done when: the content and chip-consistency tests pass for all six, including Tiny RAM.
-  - Decide (and write down in the level's concept card or hints) whether sequences may change LOAD/ADDR while CLK is high. A player design that gates the clock (for example `AND(CLK, LOAD)`) sees a real rising edge there, and the ideal model rejects it. Either avoid such steps or teach "don't gate the clock".
+  - Decided: sequences never change LOAD or the address while CLK is high (`clock.holdWhileHigh`), so clock-gating designs aren't failed; the Register concept card still teaches "don't gate the clock". Data inputs may change while CLK is high, which is how the tests tell a flip-flop from a latch.
   - Use warm-up steps (`expect: {}`) where the power-on state is arbitrary (flip-flops, registers, RAM).
 - [ ] **T2.8 Performance test** · the Tiny RAM full suite is timed in a test
   - Done when: it is asserted < 250 ms (spec AC 9).
