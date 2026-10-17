@@ -77,7 +77,7 @@
   - Done when: the content tests pass; the NAND chip is unlocked by 0.4; relays are excluded from Chapter 1 onward.
 - [x] **T2.4 Chapter 1: Gates** · 1.1–1.6
   - Done when: the content and chip-consistency tests pass.
-- [ ] **T2.5 Chapter 2: Routing** · 2.1–2.4
+- [x] **T2.5 Chapter 2: Routing** · 2.1–2.4
   - Done when: the content and chip-consistency tests pass.
 - [ ] **T2.6 Chapter 3: Arithmetic** · 3.1–3.4, formula display for 3.3/3.4
   - Done when: the content and chip-consistency tests pass; the subtractor reference uses Adder4 with C_in = 1.

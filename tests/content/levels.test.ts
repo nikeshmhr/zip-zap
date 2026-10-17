@@ -42,3 +42,20 @@ describe('chapter 1: gates', () => {
     );
   });
 });
+
+describe('chapter 2: routing', () => {
+  it('turns on exactly one decoder output for every address', () => {
+    const { goal } = catalogue.level('2.3');
+    if (goal.kind !== 'combinational') throw new Error('decoder must be combinational');
+    for (const [A1, A0] of [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+    ] as const) {
+      const out = goal.fn({ A1, A0 });
+      expect(Object.values(out).filter((v) => v === 1)).toHaveLength(1);
+      expect(out[`Y${A1 * 2 + A0}`]).toBe(1);
+    }
+  });
+});
