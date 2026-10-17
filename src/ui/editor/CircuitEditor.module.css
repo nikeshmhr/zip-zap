@@ -1,0 +1,7 @@
+.box {
+  fill: color-mix(in srgb, var(--selection) 10%, transparent);
+  stroke: var(--selection);
+  stroke-width: 0.08;
+  stroke-dasharray: 0.3 0.2;
+  pointer-events: none;
+}

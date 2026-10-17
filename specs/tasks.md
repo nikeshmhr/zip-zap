@@ -100,7 +100,7 @@
   - Done when: the coordinate utilities are unit-tested; wheel-zoom keeps the point under the cursor fixed.
 - [x] **T3.4 Component rendering** · relay and NAND symbols, chip boxes with labelled pins, IO switches and lamps fixed at the canvas edges, rotation
   - Done when: a visual check page renders every component kind.
-- [ ] **T3.5 Interaction state machine** · idle / dragging / wiring / box-select / panning; place from toolbox, move with snapping, multi-select, delete
+- [x] **T3.5 Interaction state machine** · idle / dragging / wiring / box-select / panning; place from toolbox, move with snapping, multi-select, delete
   - Done when: the state machine has unit tests, and manual use feels smooth.
 - [ ] **T3.6 Wiring** · drag pin → pin, direction rules, one wire per input, relay junction join with a dot, orthogonal routing, select/delete wire · deps T1.4
   - Done when: invalid connections are refused with a visible cue, and a relay join shows a junction dot.

@@ -1,9 +1,25 @@
 import { useState } from 'react';
-import type { Camera } from '../editor/camera.ts';
-import { Canvas } from '../editor/Canvas.tsx';
+import { catalogue } from '../../content/index.ts';
+import { addComponent, startCircuit } from '../../state/editing.ts';
+import { createEditorStore } from '../../state/editorStore.ts';
+import { CircuitEditor } from '../editor/CircuitEditor.tsx';
 
-/** Free-build sandbox. For now: an empty canvas (the editor lands over M3). */
+/** Free-build sandbox. For now a development playground; the real sandbox arrives in T5.6. */
+function seedCircuit() {
+  let circuit = startCircuit({ inputs: ['A', 'B'], outputs: ['OUT'] });
+  circuit = addComponent(circuit, 'nand', { x: 12, y: 0 }).circuit;
+  circuit = addComponent(circuit, 'chip:xor', { x: 22, y: 4 }).circuit;
+  return circuit;
+}
+
 export function SandboxScreen() {
-  const [camera, setCamera] = useState<Camera>({ x: -4, y: -4, zoom: 1 });
-  return <Canvas camera={camera} onCameraChange={setCamera} label="Sandbox circuit" />;
+  const [store] = useState(() => createEditorStore(seedCircuit()));
+  return (
+    <CircuitEditor
+      store={store}
+      resolve={catalogue.resolve}
+      displayName={catalogue.displayName}
+      label="Sandbox circuit"
+    />
+  );
 }

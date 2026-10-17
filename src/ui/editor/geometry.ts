@@ -127,3 +127,21 @@ export function partRect(part: ComponentInstance, geom: PartGeom): Rect {
 
 export const rectsIntersect = (a: Rect, b: Rect) =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+/** Memoised geometry lookup per component kind. Returns undefined for unknown kinds. */
+export function createGeometryLookup(
+  resolve: (kind: ComponentKind) => ComponentDef | undefined,
+  displayName: (kind: ComponentKind) => string,
+): (kind: ComponentKind) => PartGeom | undefined {
+  const cache = new Map<ComponentKind, PartGeom>();
+  return (kind) => {
+    let geom = cache.get(kind);
+    if (!geom) {
+      const def = resolve(kind);
+      if (!def) return undefined;
+      geom = partGeometry(def, displayName(kind));
+      cache.set(kind, geom);
+    }
+    return geom;
+  };
+}
