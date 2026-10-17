@@ -19,6 +19,8 @@ export interface LiveSnapshot {
   pin(comp: string, pin: string): Bit;
   flaggedWires: ReadonlySet<string>;
   flaggedParts: ReadonlySet<string>;
+  /** Tick-by-tick mode: ticks since the inputs last changed, and the parts about to update. */
+  ticking?: { ticks: number; settled: boolean; pendingParts: ReadonlySet<string> };
 }
 
 const OFF = () => 0 as Bit;
@@ -40,6 +42,9 @@ export class LiveSimulation {
   private netOf: Map<string, number> | null = null;
   private applied: Bits = {};
   private replayToken = 0;
+  private tickMode = false;
+  private tickToken = 0;
+  private ticks = 0;
   private failure: Omit<LiveSnapshot, 'pin'> | null = null;
 
   private readonly resolve: ComponentResolver;
@@ -59,6 +64,7 @@ export class LiveSimulation {
     circuit: Circuit,
     inputs: Readonly<Bits>,
     replay?: { token: number; steps: readonly Bits[] } | null,
+    tick: { mode: boolean; token: number } = { mode: false, token: 0 },
   ): LiveSnapshot {
     if (circuit !== this.circuit) {
       const topology = topologyKey(circuit);
@@ -84,7 +90,22 @@ export class LiveSimulation {
     }
     sim.setInputs(changed);
     Object.assign(this.applied, changed);
-    const { stable } = sim.settle();
+    if (Object.keys(changed).length > 0) this.ticks = 0;
+
+    // Entering tick mode doesn't advance; each later token does, by exactly one tick.
+    if (tick.mode && !this.tickMode) this.tickToken = tick.token;
+    this.tickMode = tick.mode;
+    let stable: boolean;
+    if (tick.mode) {
+      if (tick.token !== this.tickToken) {
+        this.tickToken = tick.token;
+        if (sim.tick()) this.ticks++;
+      }
+      stable = true; // oscillation is something to watch here, not an error
+    } else {
+      stable = sim.settle().stable;
+      this.ticks = 0;
+    }
 
     const netOf = this.netOf!;
     const values = new Map<number, Bit>();
@@ -97,11 +118,19 @@ export class LiveSimulation {
         circuit.wires.filter((w) => looping.has(w.from.comp)).map((w) => w.id),
       );
     }
+    const ticking = tick.mode
+      ? {
+          ticks: this.ticks,
+          settled: sim.isStable,
+          pendingParts: new Set(sim.pendingComponents()),
+        }
+      : undefined;
     return {
       status: stable ? 'ok' : 'unstable',
       issues: [],
       flaggedWires,
       flaggedParts,
+      ticking,
       // Snapshot the values now: the simulator keeps running as inputs change.
       pin: (comp, pin) => {
         const net = netOf.get(pinKey({ comp, pin }));

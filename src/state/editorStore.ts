@@ -42,6 +42,8 @@ export interface EditorState {
    * a memory level's steps). The token changes with every request.
    */
   replay: { token: number; steps: readonly Bits[] } | null;
+  /** Tick-by-tick mode: the circuit advances one tick per request instead of settling. */
+  tick: { mode: boolean; token: number };
 }
 
 export interface EditorActions {
@@ -73,6 +75,9 @@ export interface EditorActions {
   setInput(name: string, value: Bit): void;
   /** Powers the live circuit on and plays these input states in order (see `replay`). */
   replaySteps(steps: readonly Bits[]): void;
+  setTickMode(on: boolean): void;
+  /** Advances the circuit one tick (tick-by-tick mode only). */
+  nextTick(): void;
   toggleInput(name: string): void;
 }
 
@@ -105,6 +110,7 @@ export function createEditorStore(
     inputs,
     gestureBase: null,
     replay: null,
+    tick: { mode: false, token: 0 },
 
     load: (circuit) =>
       set({ circuit, selection: EMPTY_SELECTION, past: [], future: [], gestureBase: null }),
@@ -210,6 +216,12 @@ export function createEditorStore(
     select: (selection) => set({ selection }),
 
     setInput: (name, value) => set({ inputs: { ...get().inputs, [name]: value } }),
+
+    setTickMode: (on) => set({ tick: { mode: on, token: get().tick.token } }),
+    nextTick: () => {
+      const { tick } = get();
+      if (tick.mode) set({ tick: { mode: true, token: tick.token + 1 } });
+    },
 
     replaySteps: (steps) =>
       set({

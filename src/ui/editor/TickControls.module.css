@@ -1,0 +1,52 @@
+.bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transform: translateX(-50%);
+  font-size: 13px;
+}
+
+.toggle,
+.next {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle:hover,
+.next:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.toggle[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.next {
+  background: var(--accent);
+  color: white;
+}
+
+.next:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.status {
+  padding: 0 6px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

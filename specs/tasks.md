@@ -153,7 +153,7 @@
   - Done when: a broken DFF shows the failing step and the canvas state at that step.
 - [x] **T6.3 Waveform view** _(Should)_ · timing diagram of all IO pins over the steps, expected vs actual
   - Done when: the waveform renders for 4.x levels, with mismatches highlighted.
-- [ ] **T6.4 Tick-by-tick mode** _(Should)_ · advance one tick at a time; shows propagation and oscillation
+- [x] **T6.4 Tick-by-tick mode** _(Should)_ · advance one tick at a time; shows propagation and oscillation
   - Done when: a player can watch an SR latch settle tick by tick.
 - [ ] **T6.5 Chapter 4 playthrough** · manually solve 4.1–4.6 in the UI and fix any friction
   - Done when: Tiny RAM is solved in the UI (spec AC 5).

@@ -35,6 +35,7 @@ import { LiveSimulation } from './liveSimulation.ts';
 import { PartView } from './PartView.tsx';
 import { HelpPanel } from './HelpPanel.tsx';
 import { shortcutFor } from './shortcuts.ts';
+import { TickControls } from './TickControls.tsx';
 import { KIND_MIME, Toolbox } from './Toolbox.tsx';
 import { WireView } from './WireView.tsx';
 import styles from './CircuitEditor.module.css';
@@ -76,12 +77,13 @@ export function CircuitEditor(props: CircuitEditorProps) {
   const selection = useStore(store, (s) => s.selection);
   const inputs = useStore(store, (s) => s.inputs);
   const replay = useStore(store, (s) => s.replay);
+  const tick = useStore(store, (s) => s.tick);
 
   // Live simulation: one simulator per circuit version, so latches remember between toggles.
   const live = useMemo(() => new LiveSimulation(resolve, options), [resolve, options]);
   const snapshot = useMemo(
-    () => live.evaluate(circuit, inputs, replay),
-    [live, circuit, inputs, replay],
+    () => live.evaluate(circuit, inputs, replay, tick),
+    [live, circuit, inputs, replay, tick],
   );
 
   const geomOf = useMemo(() => createGeometryLookup(resolve, displayName), [resolve, displayName]);
@@ -453,6 +455,13 @@ export function CircuitEditor(props: CircuitEditorProps) {
         overlay={
           <>
             <StatusBadge snapshot={snapshot} />
+            <TickControls
+              on={tick.mode}
+              ticks={snapshot.ticking?.ticks ?? 0}
+              settled={snapshot.ticking?.settled ?? true}
+              onToggle={() => store.getState().setTickMode(!tick.mode)}
+              onNext={() => store.getState().nextTick()}
+            />
             <HelpPanel
               open={helpOpen}
               onToggle={() => setHelpOpen((open) => !open)}
@@ -494,6 +503,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
                 values={pinValues(snapshot, part.id, geom.pins)}
                 selected={selected.has(part.id)}
                 flagged={snapshot.flaggedParts.has(part.id)}
+                pending={snapshot.ticking?.pendingParts.has(part.id)}
                 blockedPins={blocked.get(part.id)}
                 family={family?.(part.kind)}
                 targetPin={

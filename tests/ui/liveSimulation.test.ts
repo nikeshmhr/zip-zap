@@ -114,3 +114,43 @@ describe('LiveSimulation replay', () => {
     expect(live.evaluate(latch, reset[2], { token: 2, steps }).pin('out:Q', 'in')).toBe(0);
   });
 });
+
+describe('LiveSimulation tick-by-tick mode', () => {
+  /** A → NOT → NOT → NOT → OUT, from NANDs with tied inputs. */
+  const chain = buildCircuit({ inputs: ['A'], outputs: ['OUT'] }, (b) => {
+    let prev: string | { comp: string; pin: string } = 'A';
+    for (let i = 0; i < 3; i++) {
+      const g = b.add('nand');
+      b.wire(prev, g.in('a'));
+      b.wire(prev, g.in('b'));
+      prev = g.out('out');
+    }
+    b.wire(prev, 'OUT');
+  });
+
+  it('advances exactly one tick per request, showing which parts update next', () => {
+    const live = new LiveSimulation(primitiveResolver);
+    const off = { mode: false, token: 0 };
+    expect(live.evaluate(chain, { A: 0 }, null, off).pin('out:OUT', 'in')).toBe(1);
+
+    let snap = live.evaluate(chain, { A: 1 }, null, { mode: true, token: 0 });
+    expect(snap.ticking).toMatchObject({ ticks: 0, settled: false });
+    expect([...snap.ticking!.pendingParts]).toEqual(['c1']);
+    expect(snap.pin('out:OUT', 'in')).toBe(1); // not there yet
+
+    for (let token = 1; token <= 3; token++) {
+      snap = live.evaluate(chain, { A: 1 }, null, { mode: true, token });
+    }
+    expect(snap.ticking).toMatchObject({ ticks: 3, settled: true });
+    expect(snap.pin('out:OUT', 'in')).toBe(0);
+  });
+
+  it('settles at once when tick mode is switched off', () => {
+    const live = new LiveSimulation(primitiveResolver);
+    live.evaluate(chain, { A: 0 });
+    live.evaluate(chain, { A: 1 }, null, { mode: true, token: 0 });
+    const snap = live.evaluate(chain, { A: 1 }, null, { mode: false, token: 0 });
+    expect(snap.ticking).toBeUndefined();
+    expect(snap.pin('out:OUT', 'in')).toBe(0);
+  });
+});

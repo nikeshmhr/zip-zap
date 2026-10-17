@@ -214,3 +214,25 @@
 .part[data-family='memory'] .chip {
   fill: color-mix(in srgb, var(--family-memory) 16%, var(--part-fill));
 }
+
+/* Tick-by-tick mode: parts that will update on the next tick. */
+.pending {
+  fill: color-mix(in srgb, var(--accent) 12%, transparent);
+  stroke: var(--accent);
+  stroke-width: 0.1;
+  stroke-dasharray: 0.25 0.15;
+  pointer-events: none;
+  animation: pending 900ms ease-in-out infinite alternate;
+}
+
+@keyframes pending {
+  to {
+    fill: color-mix(in srgb, var(--accent) 24%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending {
+    animation: none;
+  }
+}

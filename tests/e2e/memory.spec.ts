@@ -52,3 +52,25 @@ test('the timing view draws the signals and scrubs by clicking a step', async ({
   await page.getByRole('tab', { name: 'Steps' }).click();
   await expect(steps(page).nth(4)).toHaveAttribute('data-live');
 });
+
+test('tick-by-tick mode advances the circuit one gate delay per click', async ({ page }) => {
+  await openLevel(page, '1.1');
+  await page.locator('[data-tool="nand"]').click();
+  await drawWire(page, 'in:A|out|out', 'p1|a|in');
+  await drawWire(page, 'in:A|out|out', 'p1|b|in');
+  await drawWire(page, 'p1|out|out', 'out:OUT|in|in');
+  const lampOn = page.locator('[data-part="out:OUT"] circle[data-on]');
+  await expect(lampOn.first()).toBeVisible(); // NOT 0 = 1
+
+  const controls = page.getByRole('group', { name: 'Tick by tick' });
+  await controls.getByRole('button', { name: 'Tick by tick' }).click();
+  await page.locator('[data-toggle="A"]').click();
+  await expect(controls).toContainText('Tick 0 · still changing');
+  await expect(page.locator('[data-part="p1"]')).toHaveAttribute('data-pending');
+  await expect(lampOn.first()).toBeVisible(); // not yet
+
+  await controls.getByRole('button', { name: 'Next tick ▸' }).click();
+  await expect(controls).toContainText('Tick 1 · settled');
+  await expect(lampOn).toHaveCount(0);
+  await expect(controls.getByRole('button', { name: 'Next tick ▸' })).toBeDisabled();
+});

@@ -29,6 +29,8 @@ export interface PartViewProps {
   targetPin?: string;
   /** Chip family, for its tint (gates, routing, arithmetic, memory). */
   family?: string;
+  /** Tick-by-tick mode: this part updates on the next tick. */
+  pending?: boolean;
 }
 
 /** Primitives whose pin names aren't printed on the part; they appear on hover. */
@@ -215,10 +217,21 @@ export const PartView = memo(function PartView(props: PartViewProps) {
         data-selected={selected || undefined}
         data-flagged={flagged || undefined}
         data-family={props.family}
+        data-pending={props.pending || undefined}
         transform={partTransform(part, geom)}
       >
         {/* Generous transparent hit area for selecting and dragging. */}
         <rect className={styles.hit} x={0} y={0} width={geom.width} height={geom.height} />
+        {props.pending && (
+          <rect
+            className={styles.pending}
+            x={-0.25}
+            y={-0.25}
+            width={geom.width + 0.5}
+            height={geom.height + 0.5}
+            rx={0.5}
+          />
+        )}
         {selected && (
           <rect
             className={styles.selection}
