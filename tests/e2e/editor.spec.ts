@@ -188,3 +188,16 @@ test('zooms gently with the wheel and fits the view again with F', async ({ page
   await page.keyboard.press('f');
   await expect.poll(viewWidth).toBeCloseTo(initial, 3);
 });
+
+test('Escape during a drag puts the part back', async ({ page }) => {
+  const nand = page.locator('[data-part="p1"]');
+  const before = await nand.getAttribute('transform');
+  const start = await centre(page, '[data-part="p1"]');
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + 80, start.y + 40, { steps: 6 });
+  await expect(nand).not.toHaveAttribute('transform', before!);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await expect(nand).toHaveAttribute('transform', before!);
+});

@@ -19,7 +19,15 @@ export interface PinEnd {
 
 export type Mode =
   | { kind: 'idle' }
-  | { kind: 'pressing'; target: HitTarget; start: Point; startScreen: Point; additive: boolean }
+  | {
+      kind: 'pressing';
+      target: HitTarget;
+      start: Point;
+      startScreen: Point;
+      additive: boolean;
+      /** Shift-pressed an already selected part: deselect it on release unless it's dragged. */
+      deselectOnClick?: boolean;
+    }
   | { kind: 'dragging'; ids: readonly string[]; start: Point; applied: Point }
   | { kind: 'wiring'; from: PinEnd; cursor: Point }
   | { kind: 'boxSelecting'; start: Point; current: Point; base: Selection };
@@ -28,7 +36,9 @@ export type Effect =
   | { type: 'select'; selection: Selection }
   | { type: 'beginGesture' }
   | { type: 'endGesture' }
-  | { type: 'moveSelection'; delta: Point }
+  | { type: 'moveParts'; ids: readonly string[]; delta: Point }
+  /** Abandon the gesture, restoring the circuit from before it started. */
+  | { type: 'cancelGesture' }
   | { type: 'connect'; from: PinEnd; to: PinEnd }
   | { type: 'toggleInput'; name: string };
 
@@ -85,12 +95,16 @@ export function pointerDown(mode: Mode, input: PointerInput, ctx: InteractionCon
         additive,
       };
       if (additive) {
+        // Already selected: wait for release, so shift-dragging still moves the selection.
+        if (selection.components.includes(hit.id)) {
+          return [{ ...pressing, deselectOnClick: true }, []];
+        }
         return [
           pressing,
           [
             {
               type: 'select',
-              selection: { ...selection, components: toggled(selection.components, hit.id) },
+              selection: { ...selection, components: [...selection.components, hit.id] },
             },
           ],
         ];
@@ -137,7 +151,7 @@ export function pointerMove(mode: Mode, input: PointerInput, ctx: InteractionCon
       };
       const delta = { x: total.x - mode.applied.x, y: total.y - mode.applied.y };
       if (delta.x === 0 && delta.y === 0) return [mode, []];
-      return [{ ...mode, applied: total }, [{ type: 'moveSelection', delta }]];
+      return [{ ...mode, applied: total }, [{ type: 'moveParts', ids: mode.ids, delta }]];
     }
 
     case 'wiring':
@@ -166,6 +180,10 @@ export function pointerUp(mode: Mode, input: PointerInput, ctx: InteractionConte
       if (mode.target.type === 'toggle') {
         return [IDLE, [{ type: 'toggleInput', name: mode.target.name }]];
       }
+      if (mode.target.type === 'part' && mode.deselectOnClick) {
+        const components = toggled(ctx.selection.components, mode.target.id);
+        return [IDLE, [{ type: 'select', selection: { ...ctx.selection, components } }]];
+      }
       // A plain click on one part of a multi-selection selects just that part.
       if (mode.target.type === 'part' && !mode.additive && ctx.selection.components.length > 1) {
         return [IDLE, [{ type: 'select', selection: { components: [mode.target.id], wires: [] } }]];
@@ -189,7 +207,7 @@ export function pointerUp(mode: Mode, input: PointerInput, ctx: InteractionConte
   }
 }
 
-/** Escape or a lost pointer: finish any gesture and return to idle. */
+/** Escape or a lost pointer: abandon any gesture (undoing a drag) and return to idle. */
 export function cancel(mode: Mode): Transition {
-  return [IDLE, mode.kind === 'dragging' ? [{ type: 'endGesture' }] : []];
+  return [IDLE, mode.kind === 'dragging' ? [{ type: 'cancelGesture' }] : []];
 }

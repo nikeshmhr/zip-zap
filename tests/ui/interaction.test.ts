@@ -44,14 +44,27 @@ describe('selecting', () => {
     expect(effects).toEqual([{ type: 'select', selection: { components: ['p1'], wires: [] } }]);
   });
 
-  it('shift-pressing toggles a part in the selection', () => {
+  it('shift-press adds a part at once; shift-click on a selected part removes it on release', () => {
     const sel = { components: ['p1', 'p2'], wires: [] };
-    expect(pointerDown(IDLE, at(1, 1, part('p2'), true), ctx(sel))[1]).toEqual([
-      { type: 'select', selection: { components: ['p1'], wires: [] } },
-    ]);
     expect(pointerDown(IDLE, at(1, 1, part('p3'), true), ctx(sel))[1]).toEqual([
       { type: 'select', selection: { components: ['p1', 'p2', 'p3'], wires: [] } },
     ]);
+    const [pressing, down] = pointerDown(IDLE, at(1, 1, part('p2'), true), ctx(sel));
+    expect(down).toEqual([]);
+    expect(pointerUp(pressing, at(1, 1, part('p2')), ctx(sel))[1]).toEqual([
+      { type: 'select', selection: { components: ['p1'], wires: [] } },
+    ]);
+  });
+
+  it('shift-dragging an already selected part moves the whole selection', () => {
+    const sel = { components: ['p1', 'p3'], wires: [] };
+    const [pressing] = pointerDown(IDLE, at(0, 0, part('p3'), true), ctx(sel));
+    const [mode, effects] = pointerMove(pressing, at(2, 0), ctx(sel));
+    expect(effects).toEqual([
+      { type: 'beginGesture' },
+      { type: 'moveParts', ids: ['p1', 'p3'], delta: { x: 2, y: 0 } },
+    ]);
+    expect(pointerUp(mode, at(2, 0), ctx(sel))[1]).toEqual([{ type: 'endGesture' }]); // still selected
   });
 
   it('clicking one part of a multi-selection narrows to it on release', () => {
@@ -112,28 +125,28 @@ describe('dragging', () => {
     expect(mode).toMatchObject({ kind: 'dragging', ids: ['p1', 'p2'] });
     expect(effects).toEqual([
       { type: 'beginGesture' },
-      { type: 'moveSelection', delta: { x: 2, y: 0 } },
+      { type: 'moveParts', ids: ['p1', 'p2'], delta: { x: 2, y: 0 } },
     ]);
 
     [mode, effects] = pointerMove(mode, at(11.7, 10.3), ctx(sel));
     expect(effects).toEqual([]); // same grid cell
 
     [mode, effects] = pointerMove(mode, at(9, 13), ctx(sel));
-    expect(effects).toEqual([{ type: 'moveSelection', delta: { x: -3, y: 3 } }]);
+    expect(effects).toEqual([{ type: 'moveParts', ids: ['p1', 'p2'], delta: { x: -3, y: 3 } }]);
 
     const [end, endEffects] = pointerUp(mode, at(9, 13), ctx(sel));
     expect(end).toBe(IDLE);
     expect(endEffects).toEqual([{ type: 'endGesture' }]);
   });
 
-  it('cancelling a drag still closes the gesture', () => {
+  it('cancelling a drag abandons it', () => {
     const dragging: Mode = {
       kind: 'dragging',
       ids: ['p1'],
       start: { x: 0, y: 0 },
       applied: { x: 1, y: 0 },
     };
-    expect(cancel(dragging)).toEqual([IDLE, [{ type: 'endGesture' }]]);
+    expect(cancel(dragging)).toEqual([IDLE, [{ type: 'cancelGesture' }]]);
   });
 });
 

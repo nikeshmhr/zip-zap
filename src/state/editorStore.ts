@@ -46,6 +46,8 @@ export interface EditorActions {
   /** Applies a change without recording it; the gesture records it as one entry. */
   preview(change: (circuit: Circuit) => Circuit): void;
   endGesture(): void;
+  /** Ends the gesture by restoring the circuit from before it started. */
+  cancelGesture(): void;
   undo(): void;
   redo(): void;
 
@@ -53,6 +55,7 @@ export interface EditorActions {
   /** Wires two pins if the wiring rules allow it. */
   connect(a: PinEnd, b: PinEnd, ctx: WiringContext): ConnectResult;
   moveSelection(delta: Point): void;
+  moveParts(ids: readonly string[], delta: Point): void;
   rotateSelection(): void;
   duplicateSelection(): void;
   deleteSelection(): void;
@@ -114,6 +117,11 @@ export function createEditorStore(initial: Circuit, inputs: Bits = {}) {
       else set({ gestureBase: null, past: record(past, gestureBase), future: [] });
     },
 
+    cancelGesture: () => {
+      const { gestureBase } = get();
+      if (gestureBase) set({ circuit: gestureBase, gestureBase: null });
+    },
+
     undo: () => {
       const { past, future, circuit, selection } = get();
       const previous = past.at(-1);
@@ -157,6 +165,8 @@ export function createEditorStore(initial: Circuit, inputs: Bits = {}) {
 
     moveSelection: (delta) =>
       get().commit((c) => moveComponents(c, get().selection.components, delta)),
+
+    moveParts: (ids, delta) => get().commit((c) => moveComponents(c, ids, delta)),
 
     rotateSelection: () => get().commit((c) => rotateComponents(c, get().selection.components)),
 

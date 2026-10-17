@@ -35,6 +35,17 @@ describe('editor store', () => {
     expect(s().circuit.components.at(-1)?.pos).toEqual({ x: 10, y: 0 });
   });
 
+  it('cancelling a gesture restores the circuit and records nothing', () => {
+    const store = make();
+    store.getState().addPart('nand', { x: 10, y: 0 });
+    const before = store.getState().circuit;
+    store.getState().beginGesture();
+    store.getState().moveParts(['p1'], { x: 5, y: 5 });
+    store.getState().cancelGesture();
+    expect(store.getState().circuit).toBe(before);
+    expect(store.getState().past).toHaveLength(1);
+  });
+
   it('records nothing for a gesture that changed nothing', () => {
     const store = make();
     store.getState().beginGesture();

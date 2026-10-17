@@ -141,8 +141,11 @@ export function CircuitEditor(props: CircuitEditorProps) {
         case 'endGesture':
           s.endGesture();
           break;
-        case 'moveSelection':
-          s.moveSelection(effect.delta);
+        case 'moveParts':
+          s.moveParts(effect.ids, effect.delta);
+          break;
+        case 'cancelGesture':
+          s.cancelGesture();
           break;
         case 'toggleInput':
           s.toggleInput(effect.name);
