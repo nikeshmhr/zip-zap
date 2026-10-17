@@ -34,7 +34,7 @@
 
 ## M1: Engine (headless)
 
-- [ ] **T1.1 Model types** · `Circuit`, `ComponentInstance`, `Wire`, `PinRef`, `ComponentKind`, `Bits` helpers (plan §4.1)
+- [x] **T1.1 Model types** · `Circuit`, `ComponentInstance`, `Wire`, `PinRef`, `ComponentKind`, `Bits` helpers (plan §4.1)
   - Done when: the types compile, and the helpers (bits ↔ number, row enumeration) have tests.
 - [ ] **T1.2 Primitives** · `ComponentDef` interface; `nand`, `relayNO`, `relayNC`, `power`, `const0/1`, `in`, `out` (plan §4.2)
   - Done when: each primitive's `step` is tested against its truth table.
