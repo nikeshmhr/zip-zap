@@ -125,7 +125,7 @@
   - Done when: solving 0.4 unlocks NAND and opens 1.1.
 - [x] **T4.6 Concept cards and hints** · markdown modal on first open (re-openable); 2-step hint reveal
   - Done when: the concept card appears on first visit only, and hints reveal in order.
-- [ ] **T4.7 E2E: first level** · Playwright drags parts, wires them, runs tests and solves 0.1
+- [x] **T4.7 E2E: first level** · Playwright drags parts, wires them, runs tests and solves 0.1
   - Done when: `pnpm e2e` passes (spec AC 1, automated half).
 
 ## M5: Progression and persistence
