@@ -138,7 +138,7 @@
   - Done when: a manual reload mid-level restores the exact circuit.
 - [x] **T5.4 Map screen** · chapters × level nodes (locked/available/solved + bests); entry point to the Sandbox
   - Done when: the map reflects progress, and locked levels can't be opened from the URL either.
-- [ ] **T5.5 Settings screen** · theme, sound, motion, export/import (with confirmation), reset progress (with confirmation)
+- [x] **T5.5 Settings screen** · theme, sound, motion, export/import (with confirmation), reset progress (with confirmation)
   - Done when: export, then import into a cleared browser, restores everything.
 - [ ] **T5.6 Sandbox** · every unlocked chip, free IO pins, no goal, persisted
   - Done when: the player can build freely with unlocked chips, and the circuit survives a reload.

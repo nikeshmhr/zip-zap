@@ -1,5 +1,6 @@
 import { LevelScreen } from '../ui/level/LevelScreen.tsx';
 import { MapScreen } from '../ui/map/MapScreen.tsx';
+import { SettingsScreen } from '../ui/settings/SettingsScreen.tsx';
 import { AppShell } from '../ui/shell/AppShell.tsx';
 import { GalleryScreen } from '../ui/screens/GalleryScreen.tsx';
 import { Placeholder } from '../ui/screens/Placeholder.tsx';
@@ -13,7 +14,7 @@ export function App() {
       {route.name === 'map' && <MapScreen />}
       {route.name === 'level' && <LevelScreen id={route.id} />}
       {route.name === 'sandbox' && <SandboxScreen />}
-      {route.name === 'settings' && <Placeholder title="Settings" />}
+      {route.name === 'settings' && <SettingsScreen />}
       {route.name === 'gallery' && <GalleryScreen />}
       {route.name === 'notFound' && (
         <Placeholder title="Page not found">

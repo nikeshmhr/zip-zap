@@ -87,6 +87,16 @@ describe('autosave', () => {
     expect(Object.keys(collectSave().circuits).sort()).toEqual(['1.1', '3.3']);
   });
 
+  it('writes nothing after being stopped, even when flushed with a change pending', () => {
+    const storage = new MemoryStorage();
+    autosave = initPersistence(storage);
+    useProgress.getState().revealHint('2.1');
+    autosave.stop();
+    autosave.flush();
+    vi.advanceTimersByTime(1000);
+    expect(storage.getItem(SAVE_KEY)).toBeNull();
+  });
+
   it('warns once if the browser refuses to save', () => {
     const storage = new MemoryStorage();
     autosave = initPersistence(storage);

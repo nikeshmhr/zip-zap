@@ -39,6 +39,7 @@ export interface Autosave {
 export function startAutosave(storage: Storage, delay = AUTOSAVE_DELAY_MS): Autosave {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let warned = false;
+  let stopped = false;
   const write = () => {
     timer = undefined;
     const ok = writeSave(storage, collectSave());
@@ -51,6 +52,7 @@ export function startAutosave(storage: Storage, delay = AUTOSAVE_DELAY_MS): Auto
     }
   };
   const schedule = () => {
+    if (stopped) return;
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(write, delay);
   };
@@ -61,12 +63,15 @@ export function startAutosave(storage: Storage, delay = AUTOSAVE_DELAY_MS): Auto
   ];
   return {
     flush: () => {
-      if (timer === undefined) return;
+      if (stopped || timer === undefined) return;
       clearTimeout(timer);
       write();
     },
     stop: () => {
+      // Once stopped, nothing more is written, not even by a later flush (e.g. on pagehide).
+      stopped = true;
       if (timer !== undefined) clearTimeout(timer);
+      timer = undefined;
       unsubscribers.forEach((u) => u());
     },
   };
