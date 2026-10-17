@@ -115,7 +115,7 @@
 
 - [x] **T4.1 Level screen layout** · toolbox / canvas / goal panel / top bar; loads `LevelDef` by route
   - Done when: `#/level/1.3` shows the OR level with its IO pins placed.
-- [ ] **T4.2 Goal panel: truth table** · full table, or formula + sample rows for large levels
+- [x] **T4.2 Goal panel: truth table** · full table, or formula + sample rows for large levels
   - Done when: 1.5 shows 4 rows; 3.3 shows the formula with samples and a "show all" option.
 - [ ] **T4.3 Run tests and results** · results mapped onto the table rows; clicking a failing row sets those inputs on the canvas
   - Done when: a wrong XOR highlights exactly the failing rows, and clicking one reproduces it live.

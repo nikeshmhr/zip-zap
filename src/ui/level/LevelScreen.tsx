@@ -8,6 +8,7 @@ import { routeHref } from '../../app/router.ts';
 import { levelEditor } from '../../state/session.ts';
 import { CircuitEditor } from '../editor/CircuitEditor.tsx';
 import { Placeholder } from '../screens/Placeholder.tsx';
+import { GoalPanel } from './GoalPanel.tsx';
 import styles from './LevelScreen.module.css';
 
 export function LevelScreen({ id }: { id: string }) {
@@ -54,8 +55,8 @@ function Level({ level }: { level: LevelDef }) {
           options={options}
           toolbox={catalogue.toolbox(level.id)}
         />
-        <aside className={styles.panel} aria-label="Goal">
-          <p className={styles.summary}>{level.summary}</p>
+        <aside className={styles.panel} aria-label="Level">
+          <GoalPanel level={level} store={store} />
         </aside>
       </div>
     </div>
