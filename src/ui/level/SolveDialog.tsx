@@ -59,7 +59,7 @@ export function SolveDialog({ level, result, onClose }: SolveDialogProps) {
             {best.delay !== undefined && `, delay ${best.delay}`}.
           </p>
         )}
-        {unlock && (
+        {unlock && !best && (
           <p className={styles.unlock}>
             <strong>{unlock.name}</strong> is now in your toolbox.
           </p>

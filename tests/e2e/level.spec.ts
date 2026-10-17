@@ -25,10 +25,10 @@ test('shows large goals as a formula with sample rows and a "show all" option', 
   await expect(tableRows(page)).toHaveCount(8);
   // Bits are grouped into binary numbers.
   await expect(page.getByRole('region', { name: 'Truth table' }).locator('th')).toHaveText([
-    'A',
-    'B',
+    'A3–0',
+    'B3–0',
     'CIN',
-    'S',
+    'S3–0',
     'COUT',
   ]);
   await page.getByRole('button', { name: 'Show all 512 rows' }).click();

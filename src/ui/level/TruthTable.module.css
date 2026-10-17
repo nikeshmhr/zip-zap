@@ -107,3 +107,10 @@ tr[data-status='unstable'] .status {
   overflow: hidden;
   clip-path: inset(50%);
 }
+
+.range {
+  margin-left: 1px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+}

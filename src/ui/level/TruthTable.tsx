@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import type { Bits } from '../../engine/model.ts';
 import type { CaseResult } from '../../engine/testRunner.ts';
+import type { Column } from './columns.ts';
 import { groupColumns } from './columns.ts';
 import styles from './TruthTable.module.css';
 
@@ -24,6 +25,18 @@ export interface TruthTableProps {
   /** Current switch positions. */
   live?: Bits;
   onRowClick?(inputs: Bits): void;
+}
+
+/** "A" for a single pin; "A₃–₀" style for a grouped number, showing which bits it covers. */
+function ColumnLabel({ column }: { column: Column }) {
+  if (column.pins.length === 1) return column.label;
+  const high = column.pins[0]!.slice(column.label.length);
+  return (
+    <>
+      {column.label}
+      <sub className={styles.range}>{high}–0</sub>
+    </>
+  );
 }
 
 const STATUS_LABEL = { pass: 'Pass', fail: 'Fail', unstable: 'Never settles' } as const;
@@ -53,7 +66,7 @@ export function TruthTable(props: TruthTableProps) {
           <tr>
             {inputColumns.map((col) => (
               <th key={col.label} scope="col" className={styles.input} title={col.pins.join(' ')}>
-                {col.label}
+                <ColumnLabel column={col} />
               </th>
             ))}
             {outputColumns.map((col, i) => (
@@ -63,7 +76,7 @@ export function TruthTable(props: TruthTableProps) {
                 className={i === 0 ? `${styles.output} ${styles.divider}` : styles.output}
                 title={col.pins.join(' ')}
               >
-                {col.label}
+                <ColumnLabel column={col} />
               </th>
             ))}
             {results && (

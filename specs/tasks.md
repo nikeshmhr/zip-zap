@@ -168,6 +168,8 @@
   - Done when: the greyscale test passes (spec AC 8) and a keyboard-only player can toggle inputs and run tests.
 - [ ] **T7.4 Wire bend points** _(optional)_ · manual bends on wires
   - Done when: the player can add and drag bend points on a wire.
+- [ ] **T7.8 Obstacle-avoiding wire router** _(Should; from the M4 playtest)_ · route wires around parts and keep different signals from sharing runs or corners (e.g. grid A* with costs for bends, crossings and other nets), with "highlight the whole net on hover"
+  - Done when: in the playtest circuits for 2.3, 3.2 and 3.4, no wire passes through a part or touches another signal's wire except at deliberate crossings, and routing stays under 16 ms per edit for a Tiny RAM-sized circuit.
 - [ ] **T7.5 Performance and bundle check** · profile a large Tiny RAM circuit while editing; check bundle size
   - Done when: editing stays at 60 fps and the initial load is < 300 KB gzipped.
 - [ ] **T7.6 Playtest** · 3+ people, untouched, from 0.1 onward; record where they get stuck; fix or adjust hints
