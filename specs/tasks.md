@@ -44,7 +44,7 @@
   - Done when: tests cover each rule, including "two relay outputs into one input = join" and "two NAND outputs into one input = short".
 - [x] **T1.5 Compile to netlist** · nets, drivers, readers, wired-OR merge, flat typed arrays (plan §4.3)
   - Done when: tests check the net structure for a fan-out circuit and a wired-OR circuit.
-- [ ] **T1.6 Simulator** · synchronous unit-delay `settle`, dirty tracking, `maxTicks`, STABLE/UNSTABLE, reset (plan §4.4)
+- [x] **T1.6 Simulator** · synchronous unit-delay `settle`, dirty tracking, `maxTicks`, STABLE/UNSTABLE, reset (plan §4.4)
   - Done when the tests show:
     - a chain of 3 NOTs stabilises in 3 ticks;
     - XOR from NAND is correct for all rows;
