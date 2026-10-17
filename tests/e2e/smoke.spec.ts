@@ -13,7 +13,7 @@ test('navigates between screens with the header', async ({ page }) => {
     .getByRole('link', { name: 'Sandbox' })
     .click();
   await expect(page).toHaveURL(/#\/sandbox$/);
-  await expect(page.getByRole('heading', { name: 'Sandbox' })).toBeVisible();
+  await expect(page.getByRole('application', { name: 'Sandbox circuit' })).toBeVisible();
   await page.goto('/#/level/2.3');
   await expect(page.getByRole('heading', { name: 'Level 2.3' })).toBeVisible();
 });

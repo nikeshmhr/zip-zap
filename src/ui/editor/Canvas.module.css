@@ -1,0 +1,28 @@
+.wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.canvas[data-panning] {
+  cursor: grab;
+}
+
+.canvas[data-panning]:active {
+  cursor: grabbing;
+}
+
+.dot {
+  fill: var(--grid-dot);
+}

@@ -96,7 +96,7 @@
   - Done when: navigating between routes works and the theme follows the OS setting.
 - [x] **T3.2 Editor store** · Zustand + Immer: circuit, selection, history (cap 200, one entry per gesture) (plan §6)
   - Done when: store tests cover add/move/delete/wire plus undo/redo.
-- [ ] **T3.3 Canvas** · SVG viewBox pan/zoom, dot grid, world ↔ screen coordinate utilities
+- [x] **T3.3 Canvas** · SVG viewBox pan/zoom, dot grid, world ↔ screen coordinate utilities
   - Done when: the coordinate utilities are unit-tested; wheel-zoom keeps the point under the cursor fixed.
 - [ ] **T3.4 Component rendering** · relay and NAND symbols, chip boxes with labelled pins, IO switches and lamps fixed at the canvas edges, rotation
   - Done when: a visual check page renders every component kind.

@@ -24,3 +24,6 @@ playwright/.cache/
 .vscode/*
 !.vscode/extensions.json
 *.log
+
+# Browser automation output
+.playwright-mcp/
