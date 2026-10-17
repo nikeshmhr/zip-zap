@@ -74,3 +74,12 @@ test('tick-by-tick mode advances the circuit one gate delay per click', async ({
   await expect(lampOn).toHaveCount(0);
   await expect(controls.getByRole('button', { name: 'Next tick ▸' })).toBeDisabled();
 });
+
+test('long step tables keep the summary and the first failure in view', async ({ page }) => {
+  await openLevel(page, '4.6');
+  await page.getByRole('button', { name: 'Run tests' }).click();
+  const summary = page.getByRole('region', { name: 'Tests' }).getByRole('status');
+  await expect(summary).toContainText('First problem: step 14. Expected Q=1001, got Q=0000.');
+  await expect(summary).toBeInViewport();
+  await expect(steps(page).nth(13)).toBeInViewport();
+});

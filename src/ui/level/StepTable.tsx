@@ -3,6 +3,7 @@
  * outputs expected after the circuit settles. Clock edges are marked ↑ and ↓; changed inputs are
  * highlighted; warm-up steps (which only check the circuit settles) show "—".
  */
+import { useEffect, useRef } from 'react';
 import type { Bits } from '../../engine/model.ts';
 import type { CaseResult, PlannedStep } from '../../engine/testRunner.ts';
 import type { Column } from './columns.ts';
@@ -44,6 +45,16 @@ function Label({ column }: { column: Column }) {
 
 export function StepTable(props: StepTableProps) {
   const { inputs, outputs, plan, clockPin, results, selected, onSelect } = props;
+  const wrapRef = useRef<HTMLDivElement>(null);
+  // Bring the shown step (e.g. the first failure after a run) into view.
+  useEffect(() => {
+    if (!selected) return;
+    wrapRef.current
+      ?.querySelector(
+        `table:nth-of-type(${selected.sequence + 1}) tr[data-step="${selected.step}"]`,
+      )
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [selected]);
   const inputColumns = groupColumns(inputs);
   const outputColumns = groupColumns(outputs);
   const resultAt = new Map(results?.map((r) => [`${r.sequence}:${r.step}`, r]));
@@ -68,7 +79,7 @@ export function StepTable(props: StepTableProps) {
   };
 
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} ref={wrapRef}>
       {plan.map((steps, sequence) => (
         <table key={sequence} className={styles.table} aria-label={`Sequence ${sequence + 1}`}>
           {plan.length > 1 && <caption className={styles.caption}>Sequence {sequence + 1}</caption>}

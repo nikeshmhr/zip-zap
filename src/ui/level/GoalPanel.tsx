@@ -10,6 +10,7 @@ import { enumerateRows, toBit } from '../../engine/model.ts';
 import type { TestReport } from '../../engine/testRunner.ts';
 import { planSequences, runTests } from '../../engine/testRunner.ts';
 import type { EditorStore } from '../../state/editorStore.ts';
+import { groupColumns } from './columns.ts';
 import { Hints } from './Hints.tsx';
 import type { StepRef } from './StepTable.tsx';
 import { StepTable } from './StepTable.tsx';
@@ -89,6 +90,19 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
         <h2 className={styles.heading}>Goal</h2>
         <p className={styles.summary}>{level.summary}</p>
       </section>
+      <section className={styles.section} aria-label="Tests">
+        <button type="button" className={styles.run} onClick={runAll}>
+          Run tests
+        </button>
+        {run && (
+          <RunSummary
+            report={run.report}
+            stale={stale}
+            sequential={goal.kind === 'sequential'}
+            sequences={goal.kind === 'sequential' ? goal.sequences.length : 0}
+          />
+        )}
+      </section>
       <section
         className={styles.section}
         aria-label={goal.kind === 'combinational' ? 'Truth table' : 'Steps'}
@@ -124,7 +138,7 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
                 inputs={level.inputs}
                 outputs={level.outputs}
                 plan={plan}
-                clockPin={level.clock?.pin}
+                clockPin={level.clock?.edges === false ? undefined : level.clock?.pin}
                 results={run && !stale ? run.report.cases : undefined}
                 selected={shownStep}
                 onSelect={showStep}
@@ -142,14 +156,6 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
           </>
         )}
       </section>
-      <section className={styles.section} aria-label="Tests">
-        <button type="button" className={styles.run} onClick={runAll}>
-          Run tests
-        </button>
-        {run && (
-          <RunSummary report={run.report} stale={stale} sequential={goal.kind === 'sequential'} />
-        )}
-      </section>
       <Hints level={level} />
     </>
   );
@@ -159,10 +165,12 @@ function RunSummary({
   report,
   stale,
   sequential,
+  sequences,
 }: {
   report: TestReport;
   stale: boolean;
   sequential: boolean;
+  sequences: number;
 }) {
   if (report.error) {
     return (
@@ -181,8 +189,12 @@ function RunSummary({
       </div>
     );
   }
-  const total = report.cases.length;
-  const passing = report.cases.filter((c) => c.status === 'pass').length;
+  // Warm-up steps check nothing but settling: count them only if they fail.
+  const counted = report.cases.filter(
+    (c) => Object.keys(c.expected).length > 0 || c.status !== 'pass',
+  );
+  const total = counted.length;
+  const passing = counted.filter((c) => c.status === 'pass').length;
   const firstFailure = report.cases.find((c) => c.status !== 'pass');
   return (
     <div
@@ -204,8 +216,8 @@ function RunSummary({
       )}
       {!stale && sequential && firstFailure && (
         <span>
-          First problem: sequence {(firstFailure.sequence ?? 0) + 1}, step{' '}
-          {(firstFailure.step ?? 0) + 1}.{' '}
+          First problem: {sequences > 1 ? `sequence ${(firstFailure.sequence ?? 0) + 1}, ` : ''}
+          step {(firstFailure.step ?? 0) + 1}.{' '}
           {firstFailure.status === 'unstable'
             ? 'The circuit never settles.'
             : `Expected ${formatBits(firstFailure.expected)}, got ${formatBits(firstFailure.actual)}.`}
@@ -215,7 +227,8 @@ function RunSummary({
   );
 }
 
+/** "Q=1001" style: bits of one number grouped, as in the tables. */
 const formatBits = (bits: Bits) =>
-  Object.entries(bits)
-    .map(([name, value]) => `${name}=${value}`)
+  groupColumns(Object.keys(bits))
+    .map((col) => `${col.label}=${col.pins.map((p) => bits[p] ?? 0).join('')}`)
     .join(', ');

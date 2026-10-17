@@ -27,6 +27,8 @@ export interface Toolbox {
 export interface ClockRules {
   /** The clock input. A step that changes it changes nothing else (spec §15.7). */
   pin: string;
+  /** Whether the circuit reacts to its edges (marked ↑/↓). False for a latch's enable. */
+  edges?: boolean;
   /**
    * Inputs that never change while the clock is high, so designs that gate the clock with
    * them (e.g. `AND(CLK, LOAD)`) aren't failed in the MVP.

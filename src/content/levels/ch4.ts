@@ -157,7 +157,7 @@ Never turn S and R ON together. Tests now run as **steps** over time. If a circu
         ],
       ],
     },
-    clock: { pin: 'EN' },
+    clock: { pin: 'EN', edges: false },
     toolbox: { include: 'unlocked' },
     unlocks: { kind: CHIP.dLatch, name: 'D Latch' },
     concept: `An SR latch needs two separate wires to set and reset it. A **D latch** is easier to use: one **data** input D and an **enable** input EN.

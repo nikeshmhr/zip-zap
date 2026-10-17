@@ -2,7 +2,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-x: auto;
+  /* Long tables scroll inside their own box, so the header can stay put. */
+  max-height: min(62vh, 640px);
+  overflow: auto;
 }
 
 .formula {
@@ -23,6 +25,10 @@
 }
 
 .table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
   padding: 4px 6px;
   border-bottom: 1px solid var(--border);
   font-size: 12px;
