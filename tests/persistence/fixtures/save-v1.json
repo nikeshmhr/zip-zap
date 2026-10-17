@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "progress": {
+    "0.1": {
+      "solved": true,
+      "best": { "count": 1, "delay": 1 },
+      "design": {
+        "components": [
+          { "id": "in:A", "kind": "in", "label": "A", "pos": { "x": 0, "y": 0 }, "rot": 0 },
+          { "id": "out:OUT", "kind": "out", "label": "OUT", "pos": { "x": 40, "y": 0 }, "rot": 0 },
+          { "id": "p1", "kind": "power", "pos": { "x": 8, "y": 6 }, "rot": 0 },
+          { "id": "p2", "kind": "relayNO", "pos": { "x": 16, "y": 0 }, "rot": 0 }
+        ],
+        "wires": [
+          {
+            "id": "w1",
+            "from": { "comp": "p1", "pin": "out" },
+            "to": { "comp": "p2", "pin": "in" }
+          },
+          {
+            "id": "w2",
+            "from": { "comp": "in:A", "pin": "out" },
+            "to": { "comp": "p2", "pin": "coil" }
+          },
+          {
+            "id": "w3",
+            "from": { "comp": "p2", "pin": "out" },
+            "to": { "comp": "out:OUT", "pin": "in" }
+          }
+        ]
+      },
+      "hints": 0,
+      "conceptSeen": true
+    },
+    "0.2": { "solved": false, "hints": 1, "conceptSeen": true }
+  },
+  "circuits": {
+    "0.2": {
+      "components": [
+        { "id": "in:A", "kind": "in", "label": "A", "pos": { "x": 0, "y": 0 }, "rot": 0 },
+        { "id": "in:B", "kind": "in", "label": "B", "pos": { "x": 0, "y": 4 }, "rot": 0 },
+        { "id": "out:OUT", "kind": "out", "label": "OUT", "pos": { "x": 40, "y": 2 }, "rot": 0 }
+      ],
+      "wires": []
+    }
+  },
+  "settings": { "theme": "dark", "sound": false, "motion": "system" }
+}

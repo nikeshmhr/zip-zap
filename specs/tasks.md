@@ -132,7 +132,7 @@
 
 - [x] **T5.1 Progress store and unlock rules** · solved/bests per level; in-chapter ordering; chapter gating
   - Done when: the unit tests for the unlock rules pass.
-- [ ] **T5.2 Save schema** · Zod `SaveV1`, migration chain, corrupt-save quarantine (plan §7)
+- [x] **T5.2 Save schema** · Zod `SaveV1`, migration chain, corrupt-save quarantine (plan §7)
   - Done when: tests cover a round-trip, a v1 fixture migration, and a corrupt-save backup.
 - [ ] **T5.3 Autosave and load** · debounced 500 ms writes; per-level circuits restored on open
   - Done when: a manual reload mid-level restores the exact circuit.
