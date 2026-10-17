@@ -343,10 +343,11 @@ The details planning turned up (delay metric scope, chip timing, sequential test
 
 ## 13. Risks
 
-| Risk                                                                         | Mitigation                                                                                     |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| The free-canvas editor's feel (wiring, selection) takes longer than expected | Isolate it in M3 behind an interaction state machine; playtest early; keep auto-routing simple |
-| Chapter 4 timing surprises (latch glitches, oscillation) confuse players     | Forcing steps, the oscillation badge, a concept card, and the step-by-step tick mode           |
-| Behavioural chips diverge from player-built designs                          | Chip-consistency tests; setup/hold convention in sequences                                     |
-| Difficulty spikes (XOR, the 4-bit subtractor, DFF)                           | Two-tier hints; playtest each chapter; per-level analytics (local only, could ship later)      |
-| SVG performance in the later CPU phase                                       | Rendering behind a layer that can move to Canvas; only visible components rendered             |
+| Risk                                                                                   | Mitigation                                                                                     |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| The free-canvas editor's feel (wiring, selection) takes longer than expected           | Isolate it in M3 behind an interaction state machine; playtest early; keep auto-routing simple |
+| Chapter 4 timing surprises (latch glitches, oscillation) confuse players               | Forcing steps, the oscillation badge, a concept card, and the step-by-step tick mode           |
+| Behavioural chips diverge from player-built designs                                    | Chip-consistency tests; setup/hold convention in sequences                                     |
+| Difficulty spikes (XOR, the 4-bit subtractor, DFF)                                     | Two-tier hints; playtest each chapter; per-level analytics (local only, could ship later)      |
+| SVG performance in the later CPU phase                                                 | Rendering behind a layer that can move to Canvas; only visible components rendered             |
+| Recursive DFS in `builder.layout` overflows the stack at ~5000-deep chains (CPU phase) | Make it iterative before the CPU phase; MVP circuits are far smaller                           |

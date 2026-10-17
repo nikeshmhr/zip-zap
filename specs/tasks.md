@@ -83,6 +83,8 @@
   - Done when: the content and chip-consistency tests pass; the subtractor reference uses Adder4 with C_in = 1.
 - [ ] **T2.7 Chapter 4: Memory** · 4.1–4.6 with step sequences
   - Done when: the content and chip-consistency tests pass for all six, including Tiny RAM.
+  - Decide (and write down in the level's concept card or hints) whether sequences may change LOAD/ADDR while CLK is high. A player design that gates the clock (for example `AND(CLK, LOAD)`) sees a real rising edge there, and the ideal model rejects it. Either avoid such steps or teach "don't gate the clock".
+  - Use warm-up steps (`expect: {}`) where the power-on state is arbitrary (flip-flops, registers, RAM).
 - [ ] **T2.8 Performance test** · the Tiny RAM full suite is timed in a test
   - Done when: it is asserted < 250 ms (spec AC 9).
 
