@@ -43,7 +43,7 @@ Every level you solve becomes a **chip**: a box with the level's pins that you c
 
 Your NOT chip is in the toolbox. Using chips you've built is the whole idea: each one hides the details you already understand, so you can think about the bigger picture.
 
-Hover a chip to see its pins. Chips use the same pin names as the level that created them.`,
+Each chip shows its pin names, which match the level that created it.`,
     hints: [
       "NAND is almost AND; it's just upside down.",
       'Feed the output of a NAND into your NOT chip.',
@@ -66,7 +66,7 @@ In the 1800s the mathematician Augustus De Morgan noticed that "A or B" means th
 
 **De Morgan's laws** let you swap AND for OR by inverting inputs and outputs. Engineers use them all the time to rebuild one gate out of another.`,
     hints: [
-      'OR is OFF in only one row of its table. Which row, and what does NAND do there?',
+      'OR is OFF only when both inputs are OFF. NAND is OFF only when both are ON. What if NAND saw the opposite of A and B?',
       'Invert both inputs, then NAND them together.',
     ],
     reference: (b) => b.wire(nand(b, not(b, 'A'), not(b, 'B')), 'OUT'),
@@ -106,7 +106,7 @@ XOR is the heart of binary addition (you'll see why in Chapter 3), and it's used
 Any working circuit solves the level. For a challenge, the classic design uses just **four NANDs**. Check your NAND count when you solve it.`,
     hints: [
       'XOR is the same as (A OR B) AND NOT (A AND B).',
-      'For the 4-NAND version, share one NAND of A and B: NAND it with A, NAND it with B, then NAND those two results.',
+      'For the 4-NAND version, start with NAND(A, B) and use that one result twice.',
     ],
     reference: (b) => {
       const ab = nand(b, 'A', 'B');

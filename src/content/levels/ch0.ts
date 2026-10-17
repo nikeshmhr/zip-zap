@@ -29,6 +29,8 @@ export const CH0: LevelDef[] = [
 
 Switch **A** is a weak signal: it can only drive a relay's coil, not light a lamp. The current for the lamp comes from **Power**.
 
+The **truth table** lists every combination of inputs and the output you want for each one.
+
 In 1937 George Stibitz built an adding machine from relays on his kitchen table. By the end of this game you'll have built much more.`,
     hints: [
       'The lamp needs current from Power, and A decides whether that current gets through.',
@@ -54,7 +56,7 @@ In 1937 George Stibitz built an adding machine from relays on his kitchen table.
 
 That rule has a name in logic: **AND**. The output is ON only when every input is ON.
 
-Truth tables list every combination of inputs and the output you want for each one. Check the table on the right: only one row lights the lamp.`,
+Check the truth table: only one row lights the lamp.`,
     hints: [
       'Current has to pass through two relays, one after the other.',
       "Feed the first relay's `out` into the second relay's `in`.",
@@ -106,10 +108,10 @@ It sounds trivial, but without NOT you can't build anything that reacts to a sig
 
 This level's rule is NOT (A AND B), called **NAND**. It's special: NAND is **universal**. Every other logic circuit, from a single gate to an entire computer, can be built from NAND alone.
 
-Solve this and NAND becomes your building block. From the next chapter on, relays retire and NAND is all you start with.`,
+Solve this and NAND becomes your building block. From the next chapter on, relays retire and NAND (plus constant 0 and 1) is all you start with.`,
     hints: [
       'OUT is ON whenever at least one of A or B is OFF.',
-      'Use two normally-closed relays, one per input, and join both outputs at OUT.',
+      'One relay per input, side by side rather than in series. Which kind lets current through when its input is OFF?',
     ],
     reference: (b) => {
       const p = part(b, 'power');

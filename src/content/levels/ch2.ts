@@ -18,7 +18,7 @@ export const CH2: LevelDef[] = [
     unlocks: { kind: CHIP.mux, name: 'Mux' },
     concept: `A **multiplexer** ("mux") is a signal switch. The **select** input SEL decides which data input reaches the output: A when SEL is OFF, B when it's ON. The other input is simply ignored.
 
-Inside a CPU, muxes are everywhere. They choose which register feeds the adder, whether the next instruction comes from the next address or a jump target, and much more.`,
+Inside a computer, muxes are everywhere: whenever two values compete for one wire, a mux decides which one wins.`,
     hints: [
       'Split it into two cases: "A, and SEL is OFF" or "B, and SEL is ON".',
       'AND each data input with SEL or with NOT SEL, then OR the two results.',
@@ -50,7 +50,7 @@ Think of a railway junction. SEL sets the points, and the signal travels down ex
 This is your first level with two outputs. Each output has its own column in the truth table.`,
     hints: [
       'Output A should carry IN only while SEL is OFF.',
-      'A = IN AND NOT SEL, and B = IN AND SEL.',
+      "A needs IN *and* 'SEL is OFF' at the same time. B needs IN and 'SEL is ON'.",
     ],
     reference: (b) => {
       b.wire(and(b, 'IN', not(b, 'SEL')), 'A');

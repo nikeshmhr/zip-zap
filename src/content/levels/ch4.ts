@@ -111,10 +111,10 @@ export const CH4: LevelDef[] = [
 
 Two cross-coupled NOR gates make a **latch**. S (set) turns Q ON, R (reset) turns Q OFF, and when both are OFF, Q keeps whatever it was.
 
-Tests now run as **steps** over time. If a circuit never settles, it's **oscillating**; check your loops.`,
+Never turn S and R ON together. Tests now run as **steps** over time. If a circuit never settles, it's **oscillating**; check your loops.`,
     hints: [
       'Q has to be able to keep itself ON. Something must feed back into something else.',
-      'Use two NOR gates: Q = NOR(R, the other gate), and the other gate = NOR(S, Q).',
+      'Use two NOR gates, each output feeding one input of the other. R goes into the gate that drives Q.',
     ],
     reference: (b) => {
       const top = part(b, CHIP.nor, { A: 'R' });
@@ -206,7 +206,7 @@ That's one bit of memory with a "save" button.`,
     clock: { pin: 'CLK' },
     toolbox: { include: 'unlocked' },
     unlocks: { kind: CHIP.dff, name: 'D Flip-Flop' },
-    concept: `Computers move in lock-step to a **clock**: a signal that flips OFF and ON millions of times a second.
+    concept: `Computers move in lock-step to a **clock**: a signal that flips OFF and ON billions of times a second.
 
 A **flip-flop** reads D only at the instant CLK turns ON (the **rising edge**) and ignores D the rest of the time. Every part of a computer can then update at the same moment, without signals racing each other.
 
@@ -215,7 +215,7 @@ The trick: two latches in a row, open at opposite times, like an airlock.
 At power-on, Q may start either way; the first clock pulse sets it.`,
     hints: [
       "Use two D latches: a 'leader' that's open while the clock is OFF, and a 'follower' that's open while it's ON.",
-      "Leader: D from D, EN = NOT CLK. Follower: D from the leader's Q, EN = CLK.",
+      'Leader: EN = NOT CLK. Follower: EN = CLK. Now, what should each latch’s D read?',
     ],
     reference: (b) => {
       const leader = part(b, CHIP.dLatch, { D: 'D', EN: not(b, 'CLK') });
@@ -255,7 +255,7 @@ At power-on, Q may start either way; the first clock pulse sets it.`,
     unlocks: { kind: CHIP.register, name: 'Register' },
     concept: `A flip-flop stores a new value on *every* clock edge. A **register** stores one only when told to: on the clock edge it loads D if **LOAD** is ON, and otherwise keeps its value.
 
-Tempting shortcut: switch the clock off with an AND gate. Real designers avoid "gating the clock", because the extra gate delays the clock and can cause false edges. Instead, let the flip-flop clock every time, and choose *what* it stores.`,
+Tempting shortcut: switch the clock off with an AND gate. This level accepts it, but designers treat "clock gating" with care: the extra gate delays the clock, and a LOAD change while the clock is ON can create a false edge. The safer habit is to let the flip-flop clock every time and choose *what* it stores.`,
     hints: [
       'On every clock edge the flip-flop stores something. When LOAD is OFF, what should that be?',
       "Put a Mux in front of the flip-flop. SEL = LOAD chooses between the flip-flop's own Q (keep) and D (new).",
@@ -359,9 +359,9 @@ CPUs keep the values they're working on in registers like this one. They're the 
     unlocks: { kind: CHIP.ram, name: 'RAM 4×4' },
     concept: `**RAM** (random-access memory) is many registers plus **addressing**. The address chooses one word. Writing loads only that register, and reading routes its value to Q.
 
-Your RAM holds four 4-bit words: 16 bits of memory. Each one is made of flip-flops, built from latches, built from gates, built from NAND, built from relays. You built every layer.
+Your RAM holds four 4-bit words: 16 bits of memory. Each bit is a flip-flop, built from latches, built from gates, built from NAND, built from relays. You built every layer.
 
-Real computers have billions of bits, but the idea is exactly this.`,
+Real computers have billions of bits, stored more compactly, but the addressing works exactly like this.`,
     hints: [
       'Writing: a decoder chooses which register gets LOAD. Reading: muxes choose which register reaches Q.',
       'Decode A1 A0, AND each decoder output with LOAD for one 4-bit register each. For each bit of Q, a 4-way Mux picks that bit from the four registers.',

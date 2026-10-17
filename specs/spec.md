@@ -118,7 +118,7 @@ Constant **0** and **1** sources are available from Chapter 1 onward.
 | 3.3 | **4-bit Adder**      | A[0..3] + B[0..3] + C_in → S[0..3], C_out                 | Adder4     |
 | 3.4 | **4-bit Subtractor** | A − B in two's complement. Aha: invert B and set C_in = 1 | Sub4       |
 
-Concept cards introduce binary numbers (3.1) and negative numbers / two's complement (3.4).
+Binary numbers are first met in the Decoder (2.3); concept cards build on them for addition (3.1) and negative numbers / two's complement (3.4).
 
 ### Chapter 4: Memory
 

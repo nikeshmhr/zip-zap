@@ -26,7 +26,7 @@ export const CH3: LevelDef[] = [
     },
     toolbox: { include: 'unlocked' },
     unlocks: { kind: CHIP.halfAdder, name: 'Half Adder' },
-    concept: `Computers count in **binary**. Each digit is a wire, worth 1, 2, 4, 8… from right to left. So \`101\` is 4 + 1 = 5.
+    concept: `You met **binary** in the decoder. Each digit is a wire, worth 1, 2, 4, 8… from right to left. So \`101\` is 4 + 1 = 5.
 
 Adding two one-digit binary numbers gives at most 2, which is \`10\` in binary:
 
@@ -95,12 +95,12 @@ A circuit that does this is a **full adder**.`,
     unlocks: { kind: CHIP.adder4, name: '4-bit Adder' },
     concept: `Four wires hold a number from 0 to 15. Bit 0 is worth 1 and bit 3 is worth 8. For example, \`0101\` + \`0011\` = \`1000\` (5 + 3 = 8).
 
-Chain four full adders, each column's COUT feeding the next column's CIN. This is a **ripple-carry adder**, because the carry ripples from right to left.
+A **ripple-carry adder** passes the carry from column to column, right to left.
 
 If the total is more than 15, it doesn't fit in 4 bits: COUT turns ON. The table has 512 rows, and every one is tested.`,
     hints: [
       'Bit 0, the least significant, is the rightmost column. Start there.',
-      "Use one full adder per bit. CIN goes into bit 0, each COUT feeds the next bit's CIN, and the last COUT is the output.",
+      "Chain four full adders, each column's COUT feeding the next column's CIN.",
     ],
     reference: (b) => {
       let carry: PinRef | string = 'CIN';
@@ -126,15 +126,15 @@ If the total is more than 15, it doesn't fit in 4 bits: COUT turns ON. The table
     },
     toolbox: { include: 'unlocked' },
     unlocks: { kind: CHIP.sub4, name: '4-bit Subtractor' },
-    concept: `Can you subtract without building any new hardware? Yes, with **two's complement**.
+    concept: `Can you subtract without designing a new circuit? Yes, with **two's complement**.
 
 To make −B, invert every bit of B and add 1. So A − B = A + (NOT B) + 1.
 
-Results wrap around within 4 bits, like a car's odometer: 3 − 5 gives \`1110\`. Read as **two's complement**, where bit 3 is worth −8 instead of 8, that's −8 + 4 + 2 = −2. Correct!
+Results wrap around within 4 bits, like a car's odometer: 3 − 5 gives \`1110\`. Read as **two's complement**, where bit 3 is worth −8 instead of 8, that's −8 + 4 + 2 = −2. Correct! Whenever the true answer is between −8 and 7, D shows it exactly.
 
 Your adder already has a spare input that can add the 1.`,
     hints: [
-      "Your 4-bit adder's CIN input can add an extra 1.",
+      'Follow the recipe A + (NOT B) + 1 using chips you already own.',
       'Invert each bit of B on its way into the adder, and connect CIN to Constant 1.',
     ],
     reference: (b) => {
