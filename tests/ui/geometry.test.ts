@@ -3,6 +3,7 @@ import type { ComponentInstance, Rotation } from '../../src/engine/model.ts';
 import { PRIMITIVES } from '../../src/engine/primitives.ts';
 import { catalogue } from '../../src/content/index.ts';
 import {
+  branchPoint,
   findFreeSpot,
   partGeometry,
   partRect,
@@ -11,6 +12,7 @@ import {
   rectsIntersect,
   rotatedSize,
   routeWire,
+  routeWires,
   simplify,
 } from '../../src/ui/editor/geometry.ts';
 
@@ -163,5 +165,98 @@ describe('findFreeSpot', () => {
     expect(findFreeSpot(r, [])).toEqual({ x: 0, y: 0 });
     const spot = findFreeSpot(r, [{ x: 0, y: 0, width: 4, height: 4 }]);
     expect(rectsIntersect({ ...r, ...spot }, { x: -1, y: -1, width: 6, height: 6 })).toBe(false);
+  });
+});
+
+describe('routing regressions (editor review)', () => {
+  const right = { x: 1, y: 0 };
+  const left = { x: -1, y: 0 };
+
+  it('never doubles back between close pins', () => {
+    const route = routeWire({ x: 17, y: 2 }, right, { x: 18, y: 5 }, left);
+    const xs = route.map((p) => p.x);
+    expect(xs).toEqual([...xs].sort((a, b) => a - b));
+    expect(route[0]).toEqual({ x: 17, y: 2 });
+    expect(route.at(-1)).toEqual({ x: 18, y: 5 });
+  });
+
+  it('moves a wire of another signal to a free lane instead of sharing a run', () => {
+    const routes = routeWires([
+      {
+        id: 'w1',
+        source: 'a',
+        target: 'x',
+        start: { x: 0, y: 0 },
+        startDir: right,
+        end: { x: 10, y: 4 },
+        endDir: left,
+      },
+      {
+        id: 'w2',
+        source: 'b',
+        target: 'y',
+        start: { x: 0, y: 2 },
+        startDir: right,
+        end: { x: 10, y: 6 },
+        endDir: left,
+      },
+    ]);
+    const w1 = routes.get('w1')!;
+    const w2 = routes.get('w2')!;
+    expect(w1[1]!.x).not.toBe(w2[1]!.x);
+  });
+
+  it('lets wires of the same signal share runs', () => {
+    const routes = routeWires([
+      {
+        id: 'w1',
+        source: 'a',
+        target: 'x',
+        start: { x: 0, y: 0 },
+        startDir: right,
+        end: { x: 10, y: 4 },
+        endDir: left,
+      },
+      {
+        id: 'w2',
+        source: 'a',
+        target: 'y',
+        start: { x: 0, y: 0 },
+        startDir: right,
+        end: { x: 10, y: 6 },
+        endDir: left,
+      },
+    ]);
+    expect(routes.get('w1')![1]).toEqual(routes.get('w2')![1]);
+  });
+});
+
+describe('branchPoint', () => {
+  it('finds where a second route leaves a shared trunk', () => {
+    const a = [
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+      { x: 5, y: 4 },
+      { x: 10, y: 4 },
+    ];
+    const b = [
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+      { x: 5, y: 8 },
+      { x: 10, y: 8 },
+    ];
+    expect(branchPoint(a, b)).toEqual({ at: { x: 5, y: 4 }, distance: 9 });
+  });
+
+  it('is the start point when the routes split immediately', () => {
+    const a = [
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+    ];
+    const b = [
+      { x: 0, y: 0 },
+      { x: 0, y: 5 },
+    ];
+    expect(branchPoint(a, b)).toEqual({ at: { x: 0, y: 0 }, distance: 0 });
   });
 });

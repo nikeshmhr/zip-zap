@@ -155,26 +155,151 @@ const STUB = 1;
 /**
  * An orthogonal route from an output pin to an input pin. `startDir`/`endDir` point away from
  * their parts; an end with no direction (the cursor while wiring) is approached directly.
+ * `lane` shifts the route's middle run sideways so parallel wires don't overlap.
  */
-export function routeWire(start: Point, startDir: Point, end: Point, endDir: Point): Point[] {
-  const s1 = { x: start.x + startDir.x * STUB, y: start.y + startDir.y * STUB };
-  const e1 = { x: end.x + endDir.x * STUB, y: end.y + endDir.y * STUB };
+export function routeWire(
+  start: Point,
+  startDir: Point,
+  end: Point,
+  endDir: Point,
+  lane = 0,
+): Point[] {
+  const endFacesLeft = endDir.x === -1 || (endDir.x === 0 && endDir.y === 0);
+  if (startDir.x === 1 && endFacesLeft && end.x > start.x) {
+    // The common case: left to right. One vertical run, kept strictly between the pins.
+    const gap = end.x - start.x;
+    const midX = start.x + Math.min(gap - 0.5, Math.max(0.5, gap / 2 + lane));
+    return simplify([start, { x: midX, y: start.y }, { x: midX, y: end.y }, end]);
+  }
+
+  // Lanes also lengthen the stubs, so loop-arounds don't share their vertical runs.
+  const stub = STUB + Math.abs(lane) * 0.5;
+  const s1 = { x: start.x + startDir.x * stub, y: start.y + startDir.y * stub };
+  const e1 = { x: end.x + endDir.x * stub, y: end.y + endDir.y * stub };
   let middle: Point[];
   if (s1.x <= e1.x) {
-    const midX = (s1.x + e1.x) / 2;
+    const midX = (s1.x + e1.x) / 2 + lane;
     middle = [
       { x: midX, y: s1.y },
       { x: midX, y: e1.y },
     ];
   } else {
     // The target is behind the source: loop around above or below.
-    const midY = Math.abs(s1.y - e1.y) >= 2 ? (s1.y + e1.y) / 2 : Math.max(start.y, end.y) + 3;
+    const midY =
+      (Math.abs(s1.y - e1.y) >= 2 ? (s1.y + e1.y) / 2 : Math.max(start.y, end.y) + 3) + lane;
     middle = [
       { x: s1.x, y: midY },
       { x: e1.x, y: midY },
     ];
   }
   return simplify([start, s1, ...middle, e1, end]);
+}
+
+export interface WireRequest {
+  id: string;
+  /** Wires with the same source are one signal and may share runs. */
+  source: string;
+  /** Wires into the same input (joined relays) may share runs too. */
+  target: string;
+  start: Point;
+  startDir: Point;
+  end: Point;
+  endDir: Point;
+}
+
+const LANES = [0, 1, -1, 2, -2, 3, -3];
+
+/** Whether two axis-aligned segments run along the same line with some shared length. */
+function segmentsOverlap(a0: Point, a1: Point, b0: Point, b1: Point): boolean {
+  const horizontal = (p: Point, q: Point) => p.y === q.y && p.x !== q.x;
+  const vertical = (p: Point, q: Point) => p.x === q.x && p.y !== q.y;
+  const overlap = (p0: number, p1: number, q0: number, q1: number) =>
+    Math.min(Math.max(p0, p1), Math.max(q0, q1)) - Math.max(Math.min(p0, p1), Math.min(q0, q1)) > 0;
+  if (horizontal(a0, a1) && horizontal(b0, b1) && a0.y === b0.y) {
+    return overlap(a0.x, a1.x, b0.x, b1.x);
+  }
+  if (vertical(a0, a1) && vertical(b0, b1) && a0.x === b0.x) return overlap(a0.y, a1.y, b0.y, b1.y);
+  return false;
+}
+
+function routesOverlap(a: readonly Point[], b: readonly Point[]): boolean {
+  for (let i = 1; i < a.length; i++) {
+    for (let j = 1; j < b.length; j++) {
+      if (segmentsOverlap(a[i - 1]!, a[i]!, b[j - 1]!, b[j]!)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Routes several wires, moving each one to the first lane where it doesn't run along a wire
+ * carrying a different signal (which would make two signals look joined).
+ */
+export function routeWires(requests: readonly WireRequest[]): Map<string, Point[]> {
+  const placed: { request: WireRequest; points: Point[] }[] = [];
+  const routes = new Map<string, Point[]>();
+  for (const request of requests) {
+    const { start, startDir, end, endDir } = request;
+    let chosen: Point[] | null = null;
+    for (const lane of LANES) {
+      const points = routeWire(start, startDir, end, endDir, lane);
+      const clash = placed.some(
+        (other) =>
+          other.request.source !== request.source &&
+          other.request.target !== request.target &&
+          routesOverlap(points, other.points),
+      );
+      if (!clash) {
+        chosen = points;
+        break;
+      }
+    }
+    chosen ??= routeWire(start, startDir, end, endDir);
+    placed.push({ request, points: chosen });
+    routes.set(request.id, chosen);
+  }
+  return routes;
+}
+
+const onSegment = (p: Point, a: Point, b: Point) =>
+  (a.x === b.x && p.x === a.x && p.y >= Math.min(a.y, b.y) && p.y <= Math.max(a.y, b.y)) ||
+  (a.y === b.y && p.y === a.y && p.x >= Math.min(a.x, b.x) && p.x <= Math.max(a.x, b.x));
+
+const onPolyline = (p: Point, poly: readonly Point[]) =>
+  poly.some((q, i) => i > 0 && onSegment(p, poly[i - 1]!, q)) ||
+  (poly.length === 1 && poly[0]!.x === p.x && poly[0]!.y === p.y);
+
+/**
+ * Two routes that start at the same point: where `b` leaves `a`, and how far along `b` that is.
+ * Used to draw junction dots where a signal branches.
+ */
+export function branchPoint(
+  a: readonly Point[],
+  b: readonly Point[],
+): { at: Point; distance: number } {
+  let distance = 0;
+  let at = b[0]!;
+  for (let i = 1; i < b.length; i++) {
+    const from = b[i - 1]!;
+    const to = b[i]!;
+    const length = Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
+    if (onPolyline(to, a)) {
+      distance += length;
+      at = to;
+      continue;
+    }
+    // b leaves a somewhere along this segment: the furthest vertex of a still on it.
+    let best = from;
+    for (const q of a) {
+      if (!onSegment(q, from, to)) continue;
+      const d = Math.abs(q.x - from.x) + Math.abs(q.y - from.y);
+      if (d > Math.abs(best.x - from.x) + Math.abs(best.y - from.y)) best = q;
+    }
+    distance += Math.abs(best.x - from.x) + Math.abs(best.y - from.y);
+    at = best;
+    break;
+  }
+  return { at, distance };
 }
 
 /** Drops repeated points and points in the middle of straight runs. */

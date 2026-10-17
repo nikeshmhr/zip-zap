@@ -22,7 +22,10 @@ import {
   polylinePath,
   rectsIntersect,
   routeWire,
+  routeWires,
+  branchPoint,
 } from './geometry.ts';
+import type { WireRequest } from './geometry.ts';
 import { hitTest } from './hitTest.ts';
 import type { Effect, InteractionContext, Mode, PointerInput } from './interaction.ts';
 import { IDLE, cancel, normalizeRect, pointerDown, pointerMove, pointerUp } from './interaction.ts';
@@ -232,31 +235,62 @@ export function CircuitEditor(props: CircuitEditorProps) {
     [circuit.components, geomOf],
   );
 
-  const wires = useMemo(
-    () =>
-      circuit.wires.flatMap((w) => {
-        const from = pinAnchor(w.from.comp, w.from.pin, 'out');
-        const to = pinAnchor(w.to.comp, w.to.pin, 'in');
-        if (!from || !to) return [];
-        return [{ wire: w, points: routeWire(from.at, from.facing, to.at, to.facing) }];
-      }),
-    [circuit.wires, pinAnchor],
-  );
-
-  // Junction dots where several relay outputs are joined at one input.
-  const junctions = useMemo(() => {
-    const count = new Map<string, number>();
-    for (const w of circuit.wires) {
-      const key = `${w.to.comp}|${w.to.pin}`;
-      count.set(key, (count.get(key) ?? 0) + 1);
-    }
-    return [...count].flatMap(([key, n]) => {
-      if (n < 2) return [];
-      const [comp = '', pin = ''] = key.split('|');
-      const anchor = pinAnchor(comp, pin, 'in');
-      return anchor ? [{ key, at: anchor.at, comp, pin }] : [];
+  const wires = useMemo(() => {
+    const requests: WireRequest[] = circuit.wires.flatMap((w) => {
+      const from = pinAnchor(w.from.comp, w.from.pin, 'out');
+      const to = pinAnchor(w.to.comp, w.to.pin, 'in');
+      if (!from || !to) return [];
+      return [
+        {
+          id: w.id,
+          source: `${w.from.comp}|${w.from.pin}`,
+          target: `${w.to.comp}|${w.to.pin}`,
+          start: from.at,
+          startDir: from.facing,
+          end: to.at,
+          endDir: to.facing,
+        },
+      ];
+    });
+    const routes = routeWires(requests);
+    return circuit.wires.flatMap((wire) => {
+      const points = routes.get(wire.id);
+      return points ? [{ wire, points }] : [];
     });
   }, [circuit.wires, pinAnchor]);
+
+  // Junction dots where a signal visibly branches (fan-out) or joined relay outputs merge.
+  const junctions = useMemo(() => {
+    const dots: { key: string; at: Point; comp: string; pin: string }[] = [];
+    const groups = (end: 'from' | 'to') => {
+      const byPin = new Map<string, Point[][]>();
+      for (const { wire, points } of wires) {
+        const ref = wire[end];
+        const key = `${ref.comp}|${ref.pin}`;
+        const route = end === 'from' ? points : [...points].reverse();
+        byPin.set(key, [...(byPin.get(key) ?? []), route]);
+      }
+      for (const [key, routes] of byPin) {
+        const [comp = '', pin = ''] = key.split('|');
+        routes.forEach((route, i) => {
+          if (i === 0) return;
+          let best = branchPoint(routes[0]!, route);
+          for (const earlier of routes.slice(1, i)) {
+            const candidate = branchPoint(earlier, route);
+            if (candidate.distance > best.distance) best = candidate;
+          }
+          if (best.distance === 0) {
+            // Splitting right at the pin: only joins need a dot (the pin shows a fan-out).
+            if (end === 'from') return;
+          }
+          dots.push({ key: `${end}:${key}:${i}`, at: best.at, comp, pin });
+        });
+      }
+    };
+    groups('from');
+    groups('to');
+    return dots;
+  }, [wires]);
 
   const preview = useMemo(() => {
     if (mode.kind !== 'wiring') return null;
