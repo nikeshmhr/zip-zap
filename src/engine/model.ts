@@ -80,7 +80,8 @@ export const ioId = (kind: 'in' | 'out', label: string): string => `${kind}:${la
 // ---------------------------------------------------------------------------
 // Bit helpers
 
-export const toBit = (value: boolean | number): Bit => (value ? 1 : 0);
+/** Truthy → 1; falsy or missing (e.g. an unconnected pin) → 0. */
+export const toBit = (value: boolean | number | undefined): Bit => (value ? 1 : 0);
 
 /**
  * Every combination of values for `names`, in truth-table order:
