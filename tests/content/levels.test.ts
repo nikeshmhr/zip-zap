@@ -103,6 +103,11 @@ describe('chapter 4: memory', () => {
       catalogue.validateOptions(id),
     );
   };
+  /** A wrong design must be valid and then fail on test cases, not be rejected outright. */
+  const expectWrong = (report: ReturnType<typeof play>) => {
+    expect(report.error, describeFailures(report)).toBeUndefined();
+    expect(report.passed).toBe(false);
+  };
 
   it('has 24 levels in total, ending with the Tiny RAM', () => {
     expect(catalogue.levels).toHaveLength(24);
@@ -113,7 +118,7 @@ describe('chapter 4: memory', () => {
     const report = play('4.3', (b) => {
       b.wire(part(b, CHIP.dLatch, { D: 'D', EN: 'CLK' }).out('Q'), 'Q');
     });
-    expect(report.passed).toBe(false);
+    expectWrong(report);
   });
 
   it('accepts a flip-flop built from NAND gates alone (arbitrary power-on state)', () => {
@@ -150,15 +155,72 @@ describe('chapter 4: memory', () => {
     const report = play('4.4', (b) => {
       b.wire(part(b, CHIP.dff, { D: 'D', CLK: 'CLK' }).out('Q'), 'Q');
     });
-    expect(report.passed).toBe(false);
+    expectWrong(report);
+  });
+
+  const data = Object.fromEntries([0, 1, 2, 3].map((i) => [`D${i}`, `D${i}`]));
+  /** Swaps output bits 0 and 2, which only distinct test values can catch. */
+  const swapped = (i: number) => (i === 0 ? 2 : i === 2 ? 0 : i);
+
+  it('fails a 4-bit register with two output bits swapped', () => {
+    const report = play('4.5', (b) => {
+      for (const i of [0, 1, 2, 3]) {
+        const reg = part(b, CHIP.register, { D: `D${i}`, LOAD: 'LOAD', CLK: 'CLK' });
+        b.wire(reg.out('Q'), `Q${swapped(i)}`);
+      }
+    });
+    expectWrong(report);
+  });
+
+  it('fails a 4-bit register built from latches enabled by CLK AND LOAD', () => {
+    const report = play('4.5', (b) => {
+      const en = and(b, 'CLK', 'LOAD');
+      for (const i of [0, 1, 2, 3]) {
+        b.wire(part(b, CHIP.dLatch, { D: `D${i}`, EN: en }).out('Q'), `Q${i}`);
+      }
+    });
+    expectWrong(report);
+  });
+
+  /** Tiny RAM reference with a twist applied to each word's register or read path. */
+  const ram = (
+    b: CircuitBuilder,
+    options: { words?: number[]; outBit?: (i: number) => number; latches?: boolean } = {},
+  ) => {
+    const { words = [0, 1, 2, 3], outBit = (i: number) => i, latches = false } = options;
+    const decoder = part(b, CHIP.decoder, { A1: 'A1', A0: 'A0' });
+    const zero = part(b, 'const0').out('out');
+    const regs = new Map<number, (i: number) => ReturnType<typeof nand>>();
+    for (const w of words) {
+      const load = and(b, decoder.out(`Y${w}`), 'LOAD');
+      if (latches) {
+        const en = and(b, load, 'CLK');
+        const qs = [0, 1, 2, 3].map((i) => part(b, CHIP.dLatch, { D: `D${i}`, EN: en }).out('Q'));
+        regs.set(w, (i) => qs[i]!);
+      } else {
+        const reg = part(b, CHIP.register4, { ...data, LOAD: load, CLK: 'CLK' });
+        regs.set(w, (i) => reg.out(`Q${i}`));
+      }
+    }
+    for (const i of [0, 1, 2, 3]) {
+      const select: Record<string, ReturnType<typeof nand> | string> = { S1: 'A1', S0: 'A0' };
+      for (const w of [0, 1, 2, 3]) select[`D${w}`] = regs.get(w)?.(i) ?? zero;
+      b.wire(part(b, CHIP.mux4, select).out('OUT'), `Q${outBit(i)}`);
+    }
+  };
+
+  it('accepts the reference-style RAM, and fails each broken variant', () => {
+    expect(play('4.6', (b) => ram(b)).passed).toBe(true);
+    expectWrong(play('4.6', (b) => ram(b, { words: [1, 2] })));
+    expectWrong(play('4.6', (b) => ram(b, { outBit: swapped })));
+    expectWrong(play('4.6', (b) => ram(b, { latches: true })));
   });
 
   it('fails a RAM that writes every word at once', () => {
     const report = play('4.6', (b) => {
-      const data = Object.fromEntries([0, 1, 2, 3].map((i) => [`D${i}`, `D${i}`]));
       const reg = part(b, CHIP.register4, { ...data, LOAD: 'LOAD', CLK: 'CLK' });
       for (const i of [0, 1, 2, 3]) b.wire(reg.out(`Q${i}`), `Q${i}`);
     });
-    expect(report.passed).toBe(false);
+    expectWrong(report);
   });
 });

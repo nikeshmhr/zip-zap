@@ -283,14 +283,17 @@ Tempting shortcut: switch the clock off with an AND gate. Real designers avoid "
         [
           { set: { ...word('D', 0), LOAD: 1, CLK: 0 }, expect: {} },
           ...pulse(),
-          { set: word('D', 0b1010) },
+          // Values chosen so every bit differs from every other bit somewhere (catches swaps).
+          { set: word('D', 0b1100) },
           ...pulse(),
-          { set: { ...word('D', 0b0101), LOAD: 0 } },
-          ...pulse(), // keeps 1010
+          { set: { ...word('D', 0b0110), LOAD: 0 } },
+          ...pulse(), // keeps 1100
           { set: { LOAD: 1 } },
-          ...pulse(), // loads 0101
+          ...pulse(), // loads 0110
           { set: word('D', 0b1111) },
-          ...pulse(),
+          { set: { CLK: 1 } },
+          { set: word('D', 0) }, // clock high: D ignored (catches latch-based designs)
+          { set: { CLK: 0 } },
         ],
       ],
     },
@@ -330,13 +333,19 @@ CPUs keep the values they're working on in registers like this one. They're the 
           ...write(1, 0, false),
           ...write(2, 0, false),
           ...write(3, 0, false),
-          ...write(1, 5),
-          ...write(2, 10),
+          // Every word gets a distinct, non-zero value whose bits can't be confused by a swap.
+          ...write(0, 0b1001),
+          ...write(1, 0b0101),
+          ...write(2, 0b1010),
+          ...write(3, 0b0110),
           read(0),
           read(1),
           read(2),
           read(3),
-          ...write(1, 15),
+          { set: { ...address(1), ...word('D', 15), LOAD: 1 } },
+          { set: { CLK: 1 } },
+          { set: word('D', 0) }, // clock high: D ignored (catches latch-based designs)
+          { set: { CLK: 0 } },
           read(2), // other words untouched
           read(1),
           { set: { ...address(3), ...word('D', 7), LOAD: 0 } },
