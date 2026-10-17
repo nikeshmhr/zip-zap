@@ -16,6 +16,12 @@ In development. The project follows spec-driven development:
 
 ## Development
 
-Setup instructions will be added once the project is scaffolded (task T0.2).
+Requires Node 24+ and pnpm.
+
+```sh
+pnpm install
+pnpm dev        # start the dev server
+pnpm build      # typecheck and build to dist/
+```
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/).

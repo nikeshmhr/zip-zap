@@ -23,7 +23,7 @@
 
 - [x] **T0.1 Repo setup** · `git init`, `.gitignore`, `README.md` (pitch + links to `specs/`)
   - Done when: first commit contains `specs/` and the README.
-- [ ] **T0.2 App scaffold** · Vite + React + TypeScript (strict) with pnpm; folder skeleton from plan §3 (`engine/ content/ state/ persistence/ ui/ app/`)
+- [x] **T0.2 App scaffold** · Vite + React + TypeScript (strict; pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet) with pnpm; folder skeleton from plan §3 (`engine/ content/ state/ persistence/ ui/ app/`)
   - Done when: `pnpm dev` serves a "Zip Zap" placeholder page and `pnpm build` succeeds.
 - [ ] **T0.3 Lint and format** · ESLint (incl. a rule that `engine/` may not import from `ui/`, `state/` or React) + Prettier; `lint`, `format`, `typecheck` scripts
   - Done when: an engine file that imports React fails lint.
