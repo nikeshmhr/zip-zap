@@ -199,3 +199,27 @@ export function simplify(points: Point[]): Point[] {
 
 export const polylinePath = (points: readonly Point[]) =>
   points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`).join(' ');
+
+/**
+ * The nearest position to `rect` (searching outwards in whole grid steps) where it doesn't
+ * overlap any of `taken`, keeping a one-unit gap.
+ */
+export function findFreeSpot(rect: Rect, taken: readonly Rect[], maxRadius = 30): Point {
+  const padded = (r: Rect): Rect => ({
+    x: r.x - 1,
+    y: r.y - 1,
+    width: r.width + 2,
+    height: r.height + 2,
+  });
+  const fits = (x: number, y: number) =>
+    !taken.some((t) => rectsIntersect(padded(t), { ...rect, x, y }));
+  for (let radius = 0; radius <= maxRadius; radius++) {
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
+        if (fits(rect.x + dx, rect.y + dy)) return { x: rect.x + dx, y: rect.y + dy };
+      }
+    }
+  }
+  return { x: rect.x, y: rect.y };
+}

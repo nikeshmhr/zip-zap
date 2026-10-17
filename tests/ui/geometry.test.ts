@@ -3,6 +3,7 @@ import type { ComponentInstance, Rotation } from '../../src/engine/model.ts';
 import { PRIMITIVES } from '../../src/engine/primitives.ts';
 import { catalogue } from '../../src/content/index.ts';
 import {
+  findFreeSpot,
   partGeometry,
   partRect,
   pinFacing,
@@ -153,5 +154,14 @@ describe('simplify', () => {
       { x: 4, y: 0 },
       { x: 4, y: 3 },
     ]);
+  });
+});
+
+describe('findFreeSpot', () => {
+  it('keeps the spot when it is free, and moves to the nearest free one otherwise', () => {
+    const r = { x: 0, y: 0, width: 4, height: 4 };
+    expect(findFreeSpot(r, [])).toEqual({ x: 0, y: 0 });
+    const spot = findFreeSpot(r, [{ x: 0, y: 0, width: 4, height: 4 }]);
+    expect(rectsIntersect({ ...r, ...spot }, { x: -1, y: -1, width: 6, height: 6 })).toBe(false);
   });
 });

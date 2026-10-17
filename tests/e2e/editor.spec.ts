@@ -114,3 +114,26 @@ test('shows an oscillation badge for a loop that never settles', async ({ page }
   await drawWire(page, 'in:A|out|out', 'p2|B|in');
   await expect(page.getByRole('alert')).toContainText('Oscillating');
 });
+
+test('adds parts from the toolbox by click (in a free spot) and by drag', async ({ page }) => {
+  const parts = page.locator('[data-part]');
+  await expect(parts).toHaveCount(5);
+  await page.locator('[data-tool="nand"]').click();
+  await expect(parts).toHaveCount(6);
+  await expect(page.locator('[data-part="p3"]')).toHaveAttribute('data-selected');
+
+  await page
+    .locator('[data-tool="relayNC"]')
+    .dragTo(page.getByRole('application'), { targetPosition: { x: 200, y: 400 } });
+  await expect(parts).toHaveCount(7);
+  await expect(page.locator('[data-part="p4"]')).toHaveAttribute('data-kind', 'relayNC');
+});
+
+test('the toolbox lists exactly the parts on offer', async ({ page }) => {
+  const tools = await page
+    .locator('[data-tool]')
+    .evaluateAll((els) => els.map((e) => e.getAttribute('data-tool')));
+  expect(tools.slice(0, 6)).toEqual(['power', 'const0', 'const1', 'relayNO', 'relayNC', 'nand']);
+  expect(tools).toContain('chip:ram4x4');
+  expect(tools).not.toContain('in');
+});

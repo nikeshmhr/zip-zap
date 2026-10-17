@@ -9,11 +9,12 @@ import type { ComponentResolver } from '../../engine/primitives.ts';
 import type { ValidateOptions } from '../../engine/validate.ts';
 import type { EditorStore } from '../../state/editorStore.ts';
 import type { Camera, Size } from './camera.ts';
-import { fitCamera } from './camera.ts';
+import { fitCamera, screenToWorld } from './camera.ts';
 import type { CanvasPointerEvent } from './Canvas.tsx';
 import { Canvas } from './Canvas.tsx';
 import {
   createGeometryLookup,
+  findFreeSpot,
   findPin,
   partRect,
   pinFacing,
@@ -28,6 +29,7 @@ import { IDLE, cancel, normalizeRect, pointerDown, pointerMove, pointerUp } from
 import type { LiveSnapshot } from './liveSimulation.ts';
 import { LiveSimulation } from './liveSimulation.ts';
 import { PartView } from './PartView.tsx';
+import { KIND_MIME, Toolbox } from './Toolbox.tsx';
 import { WireView } from './WireView.tsx';
 import styles from './CircuitEditor.module.css';
 import wireStyles from './wires.module.css';
@@ -39,6 +41,8 @@ export interface CircuitEditorProps {
   label: string;
   /** The level's validation rules, used to refuse connections it would reject. */
   options?: ValidateOptions;
+  /** Kinds the player may place. */
+  toolbox: readonly ComponentKind[];
 }
 
 /** Shows a short message over the canvas, e.g. why a wire was refused. */
@@ -56,7 +60,7 @@ const isTyping = (e: KeyboardEvent) =>
   e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
 
 export function CircuitEditor(props: CircuitEditorProps) {
-  const { store, resolve, displayName, label, options } = props;
+  const { store, resolve, displayName, label, options, toolbox } = props;
   const circuit = useStore(store, (s) => s.circuit);
   const selection = useStore(store, (s) => s.selection);
   const inputs = useStore(store, (s) => s.inputs);
@@ -69,9 +73,11 @@ export function CircuitEditor(props: CircuitEditorProps) {
 
   // Camera: fit the circuit once the canvas has a size.
   const [camera, setCamera] = useState<Camera>({ x: -4, y: -4, zoom: 1 });
+  const [viewport, setViewport] = useState<Size>({ width: 0, height: 0 });
   const fitted = useRef(false);
   const onSizeChange = useCallback(
     (size: Size) => {
+      setViewport(size);
       if (fitted.current || size.width === 0) return;
       fitted.current = true;
       const rects = store.getState().circuit.components.flatMap((c) => {
@@ -222,76 +228,117 @@ export function CircuitEditor(props: CircuitEditorProps) {
   }, [mode, pinAnchor]);
   const box = mode.kind === 'boxSelecting' ? normalizeRect(mode.start, mode.current) : null;
 
+  /**
+   * Adds a part centred on a world point, if the toolbox allows it. Clicked parts (`avoid`)
+   * move to the nearest free spot; dropped parts land exactly where the player put them.
+   */
+  const place = (kind: ComponentKind, centre: Point, avoid = false) => {
+    const geom = geomOf(kind);
+    if (!geom || !toolbox.includes(kind)) return;
+    let pos = {
+      x: Math.round(centre.x - geom.width / 2),
+      y: Math.round(centre.y - geom.height / 2),
+    };
+    if (avoid) {
+      const taken = store.getState().circuit.components.flatMap((c) => {
+        const g = geomOf(c.kind);
+        return g ? [partRect(c, g)] : [];
+      });
+      pos = findFreeSpot({ ...pos, width: geom.width, height: geom.height }, taken);
+    }
+    store.getState().addPart(kind, pos);
+  };
+
   return (
-    <Canvas
-      camera={camera}
-      onCameraChange={setCamera}
-      onSizeChange={onSizeChange}
-      label={label}
-      onPointerDown={(e) => {
-        if (e.event.button !== 0) return;
-        e.event.currentTarget.setPointerCapture(e.event.pointerId);
-        run(pointerDown(modeRef.current, toInput(e), context()));
-      }}
-      onPointerMove={(e) => {
-        if (modeRef.current.kind === 'idle') return;
-        run(pointerMove(modeRef.current, toInput(e), context()));
-      }}
-      onPointerUp={(e) => run(pointerUp(modeRef.current, toInput(e), context()))}
-      overlay={
-        <>
-          <StatusBadge snapshot={snapshot} />
-          {toast && (
-            <div key={toast.key} className={styles.toast} role="status">
-              {toast.message}
-            </div>
-          )}
-        </>
-      }
-    >
-      {wires.map(({ wire, points }) => (
-        <WireView
-          key={wire.id}
-          id={wire.id}
-          points={points}
-          on={snapshot.pin(wire.from.comp, wire.from.pin) === 1}
-          selected={selectedWires.has(wire.id)}
-          flagged={snapshot.flaggedWires.has(wire.id)}
-        />
-      ))}
-      <g
-        data-wiring={mode.kind === 'wiring' ? (mode.from.dir === 'out' ? 'in' : 'out') : undefined}
-        className={styles.parts}
+    <div className={styles.editor}>
+      <Toolbox
+        kinds={toolbox}
+        displayName={displayName}
+        geomOf={geomOf}
+        onAdd={(kind) =>
+          place(
+            kind,
+            screenToWorld({ x: viewport.width / 2, y: viewport.height / 2 }, camera),
+            true,
+          )
+        }
+      />
+      <Canvas
+        camera={camera}
+        onCameraChange={setCamera}
+        onSizeChange={onSizeChange}
+        label={label}
+        onPointerDown={(e) => {
+          if (e.event.button !== 0) return;
+          e.event.currentTarget.setPointerCapture(e.event.pointerId);
+          run(pointerDown(modeRef.current, toInput(e), context()));
+        }}
+        onPointerMove={(e) => {
+          if (modeRef.current.kind === 'idle') return;
+          run(pointerMove(modeRef.current, toInput(e), context()));
+        }}
+        onPointerUp={(e) => run(pointerUp(modeRef.current, toInput(e), context()))}
+        onDropData={(data, world) => {
+          const kind = data.getData(KIND_MIME) as ComponentKind;
+          if (kind) place(kind, world);
+        }}
+        overlay={
+          <>
+            <StatusBadge snapshot={snapshot} />
+            {toast && (
+              <div key={toast.key} className={styles.toast} role="status">
+                {toast.message}
+              </div>
+            )}
+          </>
+        }
       >
-        {circuit.components.map((part) => {
-          const geom = geomOf(part.kind);
-          if (!geom) return null;
-          return (
-            <PartView
-              key={part.id}
-              part={part}
-              geom={geom}
-              name={displayName(part.kind)}
-              values={pinValues(snapshot, part.id, geom.pins)}
-              selected={selected.has(part.id)}
-              flagged={snapshot.flaggedParts.has(part.id)}
-            />
-          );
-        })}
-      </g>
-      {junctions.map(({ key, at, comp, pin }) => (
-        <circle
-          key={key}
-          className={wireStyles.junction}
-          data-on={snapshot.pin(comp, pin) === 1 || undefined}
-          cx={at.x}
-          cy={at.y}
-          r={0.28}
-        />
-      ))}
-      {preview && <path className={wireStyles.preview} d={preview} />}
-      {box && <rect className={styles.box} {...box} />}
-    </Canvas>
+        {wires.map(({ wire, points }) => (
+          <WireView
+            key={wire.id}
+            id={wire.id}
+            points={points}
+            on={snapshot.pin(wire.from.comp, wire.from.pin) === 1}
+            selected={selectedWires.has(wire.id)}
+            flagged={snapshot.flaggedWires.has(wire.id)}
+          />
+        ))}
+        <g
+          data-wiring={
+            mode.kind === 'wiring' ? (mode.from.dir === 'out' ? 'in' : 'out') : undefined
+          }
+          className={styles.parts}
+        >
+          {circuit.components.map((part) => {
+            const geom = geomOf(part.kind);
+            if (!geom) return null;
+            return (
+              <PartView
+                key={part.id}
+                part={part}
+                geom={geom}
+                name={displayName(part.kind)}
+                values={pinValues(snapshot, part.id, geom.pins)}
+                selected={selected.has(part.id)}
+                flagged={snapshot.flaggedParts.has(part.id)}
+              />
+            );
+          })}
+        </g>
+        {junctions.map(({ key, at, comp, pin }) => (
+          <circle
+            key={key}
+            className={wireStyles.junction}
+            data-on={snapshot.pin(comp, pin) === 1 || undefined}
+            cx={at.x}
+            cy={at.y}
+            r={0.28}
+          />
+        ))}
+        {preview && <path className={wireStyles.preview} d={preview} />}
+        {box && <rect className={styles.box} {...box} />}
+      </Canvas>
+    </div>
   );
 }
 

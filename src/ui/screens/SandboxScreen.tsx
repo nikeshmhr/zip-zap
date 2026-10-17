@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { catalogue } from '../../content/index.ts';
+import type { ComponentKind } from '../../engine/model.ts';
 import { addComponent, startCircuit } from '../../state/editing.ts';
 import { createEditorStore } from '../../state/editorStore.ts';
 import { CircuitEditor } from '../editor/CircuitEditor.tsx';
@@ -12,6 +13,16 @@ function seedCircuit() {
   return circuit;
 }
 
+const ALL_KINDS: ComponentKind[] = [
+  'power',
+  'const0',
+  'const1',
+  'relayNO',
+  'relayNC',
+  'nand',
+  ...catalogue.chips.map((c): ComponentKind => `chip:${c.id}`),
+];
+
 export function SandboxScreen() {
   const [store] = useState(() => createEditorStore(seedCircuit()));
   return (
@@ -20,6 +31,7 @@ export function SandboxScreen() {
       resolve={catalogue.resolve}
       displayName={catalogue.displayName}
       label="Sandbox circuit"
+      toolbox={ALL_KINDS}
     />
   );
 }

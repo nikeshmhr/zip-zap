@@ -106,7 +106,7 @@
   - Done when: invalid connections are refused with a visible cue, and a relay join shows a junction dot.
 - [x] **T3.7 Live simulation** · recompile on change, toggle inputs, ON = thick solid glow / OFF = thin dashed, flow animation (off under reduced motion), oscillating badge, short highlighting · deps T1.6
   - Done when: toggling inputs on a NAND circuit updates the wires live; a ring oscillator shows the badge without freezing.
-- [ ] **T3.8 Toolbox panel** · lists the resolved toolbox for the current context, with drag-to-place
+- [x] **T3.8 Toolbox panel** · lists the resolved toolbox for the current context, with drag-to-place
   - Done when: the panel shows exactly the components the level allows.
 - [ ] **T3.9 Keyboard shortcuts** · delete, undo/redo, duplicate, rotate, space-pan, digits toggle inputs
   - Done when: every shortcut works and is listed in a help popover.

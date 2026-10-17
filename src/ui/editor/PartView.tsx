@@ -21,9 +21,12 @@ export interface PartViewProps {
   selected?: boolean;
   /** Highlighted as part of a problem (e.g. a short). */
   flagged?: boolean;
+  /** A picture only (e.g. a toolbox preview): no hit-testing attributes. */
+  decorative?: boolean;
 }
 
-function Body({ part, geom, name, values = {} }: PartViewProps) {
+function Body(props: PartViewProps) {
+  const { part, geom, name, values = {} } = props;
   const { width: w, height: h } = geom;
   const on = (pin: string) => values[pin] === 1;
 
@@ -101,7 +104,7 @@ function Body({ part, geom, name, values = {} }: PartViewProps) {
           <rect
             className={styles.toggle}
             data-on={value || undefined}
-            data-toggle={part.label}
+            data-toggle={props.decorative ? undefined : part.label}
             x={0.1}
             y={0.35}
             width={2.3}
@@ -167,12 +170,12 @@ function Body({ part, geom, name, values = {} }: PartViewProps) {
 }
 
 export const PartView = memo(function PartView(props: PartViewProps) {
-  const { part, geom, values = {}, selected, flagged } = props;
+  const { part, geom, values = {}, selected, flagged, decorative } = props;
   return (
     <g
       className={styles.part}
-      data-part={part.id}
-      data-kind={part.kind}
+      data-part={decorative ? undefined : part.id}
+      data-kind={decorative ? undefined : part.kind}
       data-selected={selected || undefined}
       data-flagged={flagged || undefined}
       transform={partTransform(part, geom)}
@@ -194,7 +197,7 @@ export const PartView = memo(function PartView(props: PartViewProps) {
         <g key={`${pin.dir}:${pin.name}`}>
           <circle
             className={styles.pin}
-            data-pin={pinKeyAttr(part.id, pin.name, pin.dir)}
+            data-pin={decorative ? undefined : pinKeyAttr(part.id, pin.name, pin.dir)}
             data-on={values[pin.name] === 1 || undefined}
             cx={pin.x}
             cy={pin.y}

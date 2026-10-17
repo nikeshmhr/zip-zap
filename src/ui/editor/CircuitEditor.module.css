@@ -56,3 +56,10 @@
   font-weight: 600;
   box-shadow: var(--shadow);
 }
+
+.editor {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: 100%;
+  min-height: 0;
+}

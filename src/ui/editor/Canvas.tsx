@@ -23,6 +23,8 @@ export interface CanvasProps {
   onPointerDown?(e: CanvasPointerEvent): void;
   onPointerMove?(e: CanvasPointerEvent): void;
   onPointerUp?(e: CanvasPointerEvent): void;
+  /** Data dropped onto the canvas (e.g. a part from the toolbox), at a world position. */
+  onDropData?(data: DataTransfer, world: Point): void;
   /** Drawn in screen space over the canvas (badges, toasts). */
   overlay?: ReactNode;
   children?: ReactNode;
@@ -149,6 +151,19 @@ export function Canvas(props: CanvasProps) {
           props.onPointerUp?.(toCanvasEvent(event));
         }}
         onPointerCancel={() => setPanning(null)}
+        onDragOver={(event) => {
+          if (props.onDropData) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+          }
+        }}
+        onDrop={(event) => {
+          if (!props.onDropData) return;
+          event.preventDefault();
+          const rect = event.currentTarget.getBoundingClientRect();
+          const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+          props.onDropData(event.dataTransfer, screenToWorld(screen, camera));
+        }}
       >
         <defs>
           <pattern id={gridId} width="2" height="2" patternUnits="userSpaceOnUse">
