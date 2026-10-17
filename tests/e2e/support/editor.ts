@@ -34,3 +34,16 @@ export async function openLevel(page: Page, id: string) {
   await page.goto(`/#/level/${id}`);
   await page.getByRole('button', { name: "Let's build" }).click();
 }
+
+/** A point halfway along a wire, in page coordinates (wires bend, so not its box's centre). */
+export async function wireMidpoint(page: Page, wireId: string) {
+  return page
+    .locator(`[data-wire="${wireId}"] path`)
+    .first()
+    .evaluate((path) => {
+      const p = path as SVGPathElement;
+      const point = p.getPointAtLength(p.getTotalLength() / 2);
+      const m = p.getScreenCTM()!;
+      return { x: point.x * m.a + point.y * m.c + m.e, y: point.x * m.b + point.y * m.d + m.f };
+    });
+}

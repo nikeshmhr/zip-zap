@@ -26,7 +26,6 @@ import {
   routeWires,
   branchPoint,
 } from './geometry.ts';
-import type { WireRequest } from './geometry.ts';
 import { hitTest } from './hitTest.ts';
 import type { Effect, InteractionContext, Mode, PointerInput } from './interaction.ts';
 import type { PinEnd } from './interaction.ts';
@@ -35,6 +34,8 @@ import type { LiveSnapshot } from './liveSimulation.ts';
 import { LiveSimulation } from './liveSimulation.ts';
 import { PartView } from './PartView.tsx';
 import { HelpPanel } from './HelpPanel.tsx';
+import { routeAround } from './router.ts';
+import { wireRequests } from './wireRequests.ts';
 import { shortcutFor } from './shortcuts.ts';
 import { sounds } from '../sound.ts';
 import { TickControls } from './TickControls.tsx';
@@ -70,6 +71,9 @@ function useToast() {
   }, [toast]);
   return [toast, (message: string) => setToast({ message, key: Date.now() })] as const;
 }
+
+/** Above this many wires, drags use the quick lane router until the part is dropped. */
+const LIVE_ROUTING_LIMIT = 30;
 
 /** How close (grid units) a dropped wire must be to a pin to snap onto it. */
 const SNAP_DISTANCE = 1.25;
@@ -133,6 +137,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
   const [mode, setMode] = useState<Mode>(IDLE);
   const [toast, showToast] = useToast();
   const [helpOpen, setHelpOpen] = useState(false);
+  const [hoveredWire, setHoveredWire] = useState<string | null>(null);
   // The key handler is registered once; it reaches the latest fit through this ref.
   const fitRef = useRef(() => {});
   useEffect(() => {
@@ -342,33 +347,35 @@ export function CircuitEditor(props: CircuitEditorProps) {
     [circuit.components, geomOf],
   );
 
+  // Wires route around parts (A* router). Mid-drag in a big circuit, the quick lane router
+  // keeps frames smooth; the proper route follows as soon as the part is dropped.
+  const dragging = mode.kind === 'dragging';
   const wires = useMemo(() => {
-    const requests: WireRequest[] = circuit.wires.flatMap((w) => {
-      const from = pinAnchor(w.from.comp, w.from.pin, 'out');
-      const to = pinAnchor(w.to.comp, w.to.pin, 'in');
-      if (!from || !to) return [];
-      return [
-        {
-          id: w.id,
-          source: `${w.from.comp}|${w.from.pin}`,
-          target: `${w.to.comp}|${w.to.pin}`,
-          start: from.at,
-          startDir: from.facing,
-          end: to.at,
-          endDir: to.facing,
-        },
-      ];
-    });
-    const obstacles = circuit.components.flatMap((c) => {
-      const g = geomOf(c.kind);
-      return g ? [partRect(c, g)] : [];
-    });
-    const routes = routeWires(requests, obstacles);
+    const { requests, obstacles } = wireRequests(circuit, geomOf);
+    const routes =
+      dragging && requests.length > LIVE_ROUTING_LIMIT
+        ? routeWires(requests, obstacles)
+        : routeAround(requests, obstacles);
     return circuit.wires.flatMap((wire) => {
       const points = routes.get(wire.id);
       return points ? [{ wire, points }] : [];
     });
-  }, [circuit.wires, circuit.components, pinAnchor, geomOf]);
+  }, [circuit, geomOf, dragging]);
+
+  // The signal under the pointer: every wire from the same output (or joined at one input).
+  const hoveredSignal = useMemo(() => {
+    const wire = circuit.wires.find((w) => w.id === hoveredWire);
+    if (!wire) return new Set<string>();
+    const source = `${wire.from.comp}|${wire.from.pin}`;
+    const target = `${wire.to.comp}|${wire.to.pin}`;
+    return new Set(
+      circuit.wires
+        .filter(
+          (w) => `${w.from.comp}|${w.from.pin}` === source || `${w.to.comp}|${w.to.pin}` === target,
+        )
+        .map((w) => w.id),
+    );
+  }, [circuit.wires, hoveredWire]);
 
   // Junction dots where a signal visibly branches (fan-out) or joined relay outputs merge.
   const junctions = useMemo(() => {
@@ -549,6 +556,8 @@ export function CircuitEditor(props: CircuitEditorProps) {
             on={snapshot.pin(wire.from.comp, wire.from.pin) === 1}
             selected={selectedWires.has(wire.id)}
             flagged={snapshot.flaggedWires.has(wire.id)}
+            highlighted={hoveredSignal.has(wire.id)}
+            onHover={setHoveredWire}
           />
         ))}
         <g

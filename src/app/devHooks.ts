@@ -16,6 +16,8 @@ declare global {
       solveBefore(id: string): void;
       /** Sounds played recently. */
       soundLog(): readonly string[];
+      /** Loads a level's reference solution into its editor. */
+      loadReference(id: string): void;
     };
   }
 }
@@ -25,6 +27,8 @@ export function installDevHooks() {
     loadLevelCircuit: (id, circuit) =>
       levelEditor(id, catalogue.canvasIo(id)).getState().load(circuit),
     soundLog: () => [...sounds.log],
+    loadReference: (id) =>
+      levelEditor(id, catalogue.canvasIo(id)).getState().load(catalogue.referenceCircuit(id)),
     solveBefore: (id) => {
       for (const level of catalogue.levels) {
         if (level.id === id) break;

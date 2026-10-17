@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
-import { openLevel, unlockLevel } from './support/editor.ts';
+import { openLevel, unlockLevel, wireMidpoint } from './support/editor.ts';
 
 /** Centre of an element on screen. */
 async function centre(page: Page, selector: string) {
@@ -95,9 +95,9 @@ test('wires can be drawn backwards, from an input to an output', async ({ page }
 test('selects a wire and deletes it with the Delete key', async ({ page }) => {
   await drawWire(page, 'in:A|out|out', 'p1|a|in');
   const wire = page.locator('[data-wire="w1"]');
-  // Click the middle of the wire's path.
-  const box = (await wire.boundingBox())!;
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  // Click halfway along the wire's path.
+  const mid = await wireMidpoint(page, 'w1');
+  await page.mouse.click(mid.x, mid.y);
   await expect(wire).toHaveAttribute('data-selected');
   await page.keyboard.press('Delete');
   await expect(page.locator('[data-wire]')).toHaveCount(0);
@@ -236,4 +236,15 @@ test('a wire dropped near a pin snaps onto it', async ({ page }) => {
   await expect(page.locator('[data-pin="p1|a|in"]')).toHaveAttribute('data-target');
   await page.mouse.up();
   await expect(page.locator('[data-wire]')).toHaveCount(1);
+});
+
+test('hovering a wire highlights its whole signal', async ({ page }) => {
+  await drawWire(page, 'in:A|out|out', 'p1|a|in');
+  await drawWire(page, 'in:A|out|out', 'p1|b|in');
+  await drawWire(page, 'in:B|out|out', 'p2|A|in');
+  const mid = await wireMidpoint(page, 'w1');
+  await page.mouse.move(mid.x, mid.y);
+  await expect(page.locator('[data-wire="w1"]')).toHaveAttribute('data-highlighted');
+  await expect(page.locator('[data-wire="w2"]')).toHaveAttribute('data-highlighted');
+  await expect(page.locator('[data-wire="w3"]')).not.toHaveAttribute('data-highlighted');
 });

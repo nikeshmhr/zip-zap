@@ -84,3 +84,12 @@
     display: none;
   }
 }
+
+/* Hovering a wire highlights every wire of the same signal. */
+.wire[data-highlighted] .line {
+  stroke: var(--selection);
+}
+
+.wire[data-highlighted][data-on] .line {
+  filter: drop-shadow(0 0 0.35px var(--selection));
+}

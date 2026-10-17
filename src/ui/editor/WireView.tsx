@@ -13,15 +13,13 @@ export interface WireViewProps {
   on?: boolean;
   selected?: boolean;
   flagged?: boolean;
+  /** Part of the signal under the pointer. */
+  highlighted?: boolean;
+  onHover?(id: string | null): void;
 }
 
-export const WireView = memo(function WireView({
-  id,
-  points,
-  on,
-  selected,
-  flagged,
-}: WireViewProps) {
+export const WireView = memo(function WireView(props: WireViewProps) {
+  const { id, points, on, selected, flagged, highlighted, onHover } = props;
   const d = polylinePath(points);
   return (
     <g
@@ -30,6 +28,9 @@ export const WireView = memo(function WireView({
       data-on={on || undefined}
       data-selected={selected || undefined}
       data-flagged={flagged || undefined}
+      data-highlighted={highlighted || undefined}
+      onPointerEnter={() => onHover?.(id)}
+      onPointerLeave={() => onHover?.(null)}
     >
       <path className={styles.hit} d={d} />
       {selected && <path className={styles.halo} d={d} />}

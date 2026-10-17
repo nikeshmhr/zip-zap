@@ -23,6 +23,7 @@ declare global {
       ): void;
       solveBefore(id: string): void;
       soundLog(): readonly string[];
+      loadReference(id: string): void;
     };
   }
 }

@@ -30,7 +30,8 @@ export interface CircuitBuilder {
 }
 
 /** Layout constants, in grid units. */
-const COLUMN_WIDTH = 10;
+/** Wide enough for the widest chips plus room for wires between columns. */
+const COLUMN_WIDTH = 14;
 const ROW_GAP = 2;
 const PIN_PITCH = 2;
 
