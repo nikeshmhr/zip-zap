@@ -11,6 +11,7 @@ import { levelEditor, useProgress } from '../../state/session.ts';
 import { CircuitEditor } from '../editor/CircuitEditor.tsx';
 import { Placeholder } from '../screens/Placeholder.tsx';
 import type { ChipKind } from '../../engine/model.ts';
+import { sounds } from '../sound.ts';
 import { ChipViewer } from './ChipViewer.tsx';
 import { ConceptCard } from './ConceptCard.tsx';
 import { GoalPanel } from './GoalPanel.tsx';
@@ -117,6 +118,7 @@ function Level({ level }: { level: LevelDef }) {
               const previousBest = useProgress.getState().get(level.id).best;
               const improved = useProgress.getState().markSolved(level.id, metrics, circuit);
               setSolved({ metrics, previousBest, improved });
+              sounds.play('chime');
             }}
           />
         </aside>

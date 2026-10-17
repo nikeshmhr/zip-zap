@@ -36,6 +36,7 @@ import { LiveSimulation } from './liveSimulation.ts';
 import { PartView } from './PartView.tsx';
 import { HelpPanel } from './HelpPanel.tsx';
 import { shortcutFor } from './shortcuts.ts';
+import { sounds } from '../sound.ts';
 import { TickControls } from './TickControls.tsx';
 import { KIND_MIME, Toolbox } from './Toolbox.tsx';
 import { WireView } from './WireView.tsx';
@@ -292,6 +293,25 @@ export function CircuitEditor(props: CircuitEditorProps) {
     // apply only reads the store, which is stable for this editor.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A click when a relay's contact moves: an existing relay's coil changed state.
+  const relayCoils = circuit.components
+    .filter((c) => c.kind === 'relayNO' || c.kind === 'relayNC')
+    .map((c) => `${c.id}=${snapshot.pin(c.id, 'coil')}`)
+    .join(',');
+  const previousCoils = useRef(relayCoils);
+  useEffect(() => {
+    const before = new Map(
+      previousCoils.current.split(',').map((e) => e.split('=') as [string, string]),
+    );
+    previousCoils.current = relayCoils;
+    const moved = relayCoils.split(',').some((entry) => {
+      const [id, value] = entry.split('=');
+      const old = before.get(id ?? '');
+      return old !== undefined && old !== value;
+    });
+    if (moved) sounds.play('click');
+  }, [relayCoils]);
 
   const selected = useMemo(() => new Set(selection.components), [selection.components]);
   const selectedWires = useMemo(() => new Set(selection.wires), [selection.wires]);

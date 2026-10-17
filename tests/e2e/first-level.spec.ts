@@ -38,3 +38,30 @@ test('a new player solves level 0.1 by dragging parts, wiring and running the te
   await expect(solved).toContainText('1 relay');
   await expect(solved.getByRole('button', { name: /Next: 0.2 Series/ })).toBeVisible();
 });
+
+test('relays click and solving chimes, unless sound is off', async ({ page }) => {
+  const log = () => page.evaluate(() => window.__zipzap!.soundLog());
+  await page.goto('/#/level/0.1');
+  await page.getByRole('button', { name: "Let's build" }).click();
+  await page.waitForFunction(() => !!window.__zipzap);
+  const canvas = page.getByRole('application', { name: 'Level 0.1 circuit' });
+  await page.locator('[data-tool="power"]').dragTo(canvas, { targetPosition: { x: 220, y: 200 } });
+  await page
+    .locator('[data-tool="relayNO"]')
+    .dragTo(canvas, { targetPosition: { x: 450, y: 330 } });
+  await drawWire(page, 'p1|out|out', 'p2|in|in');
+  await drawWire(page, 'in:A|out|out', 'p2|coil|in');
+  await drawWire(page, 'p2|out|out', 'out:OUT|in|in');
+  expect(await log()).toEqual([]);
+  await page.locator('[data-toggle="A"]').click();
+  await expect.poll(log).toEqual(['click']);
+  await page.getByRole('button', { name: 'Run tests' }).click();
+  await expect.poll(log).toEqual(['click', 'chime']);
+
+  await page.goto('/#/settings');
+  await page.getByRole('checkbox', { name: 'Sound effects' }).uncheck();
+  await page.goto('/#/level/0.1');
+  await page.locator('[data-toggle="A"]').click();
+  await page.waitForTimeout(100);
+  expect(await log()).toEqual(['click', 'chime']);
+});

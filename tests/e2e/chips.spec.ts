@@ -37,5 +37,7 @@ test('double-clicking a placed chip opens it, and digits in the viewer stay in t
   await expect(viewer.locator('[data-toggle="A"]')).toHaveAttribute('data-on');
   // The level's own switch A wasn't touched.
   await page.keyboard.press('Escape');
-  await expect(page.locator('[data-toggle="A"]')).not.toHaveAttribute('data-on');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const level = page.getByRole('application', { name: 'Level 1.3 circuit' });
+  await expect(level.locator('[data-toggle="A"]')).not.toHaveAttribute('data-on');
 });

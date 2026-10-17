@@ -6,6 +6,7 @@ import { catalogue } from '../content/index.ts';
 import type { Circuit } from '../engine/model.ts';
 import { levelEditor, useProgress } from '../state/session.ts';
 import { solveMetrics } from '../ui/level/solve.ts';
+import { sounds } from '../ui/sound.ts';
 
 declare global {
   interface Window {
@@ -13,6 +14,8 @@ declare global {
       loadLevelCircuit(id: string, circuit: Circuit): void;
       /** Marks every level before `id` solved with its reference design, unlocking `id`. */
       solveBefore(id: string): void;
+      /** Sounds played recently. */
+      soundLog(): readonly string[];
     };
   }
 }
@@ -21,6 +24,7 @@ export function installDevHooks() {
   window.__zipzap = {
     loadLevelCircuit: (id, circuit) =>
       levelEditor(id, catalogue.canvasIo(id)).getState().load(circuit),
+    soundLog: () => [...sounds.log],
     solveBefore: (id) => {
       for (const level of catalogue.levels) {
         if (level.id === id) break;
