@@ -111,20 +111,36 @@ function runCombinational(sim: Simulator, spec: TestSpec, goal: CombinationalGoa
   });
 }
 
-function runSequential(sim: Simulator, spec: TestSpec, goal: SequentialGoal): CaseResult[] {
-  const cases: CaseResult[] = [];
-  goal.sequences.forEach((steps, sequence) => {
-    sim.reset();
+/** One step of a sequential test, fully worked out: what the table shows and the test checks. */
+export interface PlannedStep {
+  sequence: number;
+  step: number;
+  /** Every input's value during this step. */
+  inputs: Bits;
+  /** The inputs this step changes (and their new values). */
+  set: Bits;
+  /** Expected outputs; empty for warm-up steps that only check the circuit settles. */
+  expected: Bits;
+}
+
+/**
+ * Expands a sequential goal into its steps, running the reference model to fill in expected
+ * outputs. The level's step table and the test runner both use this, so they always agree.
+ */
+export function planSequences(
+  spec: Pick<TestSpec, 'inputs' | 'outputs'>,
+  goal: SequentialGoal,
+): PlannedStep[][] {
+  return goal.sequences.map((steps, sequence) => {
     let state = goal.model.init();
     const inputs: Bits = Object.fromEntries(spec.inputs.map((name) => [name, 0]));
-
-    steps.forEach((step, stepIndex) => {
+    return steps.map((step, stepIndex) => {
+      const set: Bits = {};
       for (const [name, value] of Object.entries(step.set)) {
-        if (value !== undefined) inputs[name] = value;
+        if (value === undefined) continue;
+        inputs[name] = value;
+        set[name] = value;
       }
-      sim.setInputs(step.set);
-      const { stable } = sim.settle();
-
       const result = goal.model.step({ ...inputs }, state);
       state = result.state;
       const expected: Bits = {};
@@ -135,19 +151,30 @@ function runSequential(sim: Simulator, spec: TestSpec, goal: SequentialGoal): Ca
       } else {
         for (const name of spec.outputs) expected[name] = toBit(result.outputs[name]);
       }
+      return { sequence, step: stepIndex, inputs: { ...inputs }, set, expected };
+    });
+  });
+}
 
+function runSequential(sim: Simulator, spec: TestSpec, goal: SequentialGoal): CaseResult[] {
+  const cases: CaseResult[] = [];
+  for (const steps of planSequences(spec, goal)) {
+    sim.reset();
+    for (const planned of steps) {
+      sim.setInputs(planned.set);
+      const { stable } = sim.settle();
       const actual = sim.readOutputs();
       cases.push({
         index: cases.length,
-        sequence,
-        step: stepIndex,
-        inputs: { ...inputs },
-        expected,
+        sequence: planned.sequence,
+        step: planned.step,
+        inputs: planned.inputs,
+        expected: planned.expected,
         actual,
-        status: judge(stable, expected, actual),
+        status: judge(stable, planned.expected, actual),
       });
-    });
-  });
+    }
+  }
   return cases;
 }
 

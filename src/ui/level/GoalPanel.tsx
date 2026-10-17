@@ -8,9 +8,10 @@ import type { LevelDef } from '../../content/types.ts';
 import type { Bits, Circuit } from '../../engine/model.ts';
 import { enumerateRows, toBit } from '../../engine/model.ts';
 import type { TestReport } from '../../engine/testRunner.ts';
-import { runTests } from '../../engine/testRunner.ts';
+import { planSequences, runTests } from '../../engine/testRunner.ts';
 import type { EditorStore } from '../../state/editorStore.ts';
 import { Hints } from './Hints.tsx';
+import { StepTable } from './StepTable.tsx';
 import { TruthTable } from './TruthTable.tsx';
 import styles from './GoalPanel.module.css';
 
@@ -49,6 +50,11 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
     });
   }, [goal, level.inputs, level.outputs]);
 
+  const plan = useMemo(
+    () => (goal.kind === 'sequential' ? planSequences(level, goal) : []),
+    [goal, level],
+  );
+
   const setSwitches = (bits: Bits) => {
     const s = store.getState();
     for (const name of level.inputs) s.setInput(name, bits[name] ?? 0);
@@ -60,7 +66,10 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
         <h2 className={styles.heading}>Goal</h2>
         <p className={styles.summary}>{level.summary}</p>
       </section>
-      <section className={styles.section} aria-label="Truth table">
+      <section
+        className={styles.section}
+        aria-label={goal.kind === 'combinational' ? 'Truth table' : 'Steps'}
+      >
         {goal.kind === 'combinational' ? (
           <TruthTable
             inputs={level.inputs}
@@ -72,10 +81,13 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
             onRowClick={setSwitches}
           />
         ) : (
-          <p className={styles.note}>
-            This is a memory level: tests run as a sequence of steps over time. The step-by-step
-            view arrives in a later update; you can still build and run the tests.
-          </p>
+          <StepTable
+            inputs={level.inputs}
+            outputs={level.outputs}
+            plan={plan}
+            clockPin={level.clock?.pin}
+            results={run && !stale ? run.report.cases : undefined}
+          />
         )}
       </section>
       <section className={styles.section} aria-label="Tests">

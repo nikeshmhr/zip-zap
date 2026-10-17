@@ -114,3 +114,35 @@ tr[data-status='unstable'] .status {
   font-weight: 600;
   color: var(--text-muted);
 }
+
+.caption {
+  padding: 6px 0 2px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  color: var(--text-muted);
+}
+
+.stepNumber {
+  width: 32px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+td[data-changed] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+  font-weight: 700;
+}
+
+td[data-edge] {
+  color: var(--accent);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.unchecked {
+  color: var(--text-muted);
+  font-weight: 400;
+}

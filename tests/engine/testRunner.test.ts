@@ -7,7 +7,7 @@ import type { Bit, PinRef } from '../../src/engine/model.ts';
 import { chipKind, toBit } from '../../src/engine/model.ts';
 import { primitiveResolver } from '../../src/engine/primitives.ts';
 import type { TestSpec } from '../../src/engine/testRunner.ts';
-import { runTests } from '../../src/engine/testRunner.ts';
+import { planSequences, runTests } from '../../src/engine/testRunner.ts';
 import { and, nand, not, or, xor } from './helpers.ts';
 
 const xorSpec: TestSpec = {
@@ -276,5 +276,30 @@ describe('runTests: sequential regressions (engine review)', () => {
       b.wire(ff.out('q'), 'Q');
     });
     expect(runTests(circuit, r, spec).cases[0]).toMatchObject({ actual: { Q: 0 }, status: 'pass' });
+  });
+});
+
+describe('planSequences', () => {
+  it('works out full inputs, changes and expected outputs for every step', () => {
+    const model: SeqModel<Bit> = {
+      init: () => 0,
+      step: ({ D = 0, EN = 0 }, q) => {
+        const next = EN ? D : q;
+        return { outputs: { Q: next }, state: next };
+      },
+    };
+    const plan = planSequences(
+      { inputs: ['D', 'EN'], outputs: ['Q'] },
+      {
+        kind: 'sequential',
+        model,
+        sequences: [[{ set: { D: 1, EN: 1 }, expect: {} }, { set: { EN: 0 } }, { set: { D: 0 } }]],
+      },
+    );
+    expect(plan[0]).toEqual([
+      { sequence: 0, step: 0, inputs: { D: 1, EN: 1 }, set: { D: 1, EN: 1 }, expected: {} },
+      { sequence: 0, step: 1, inputs: { D: 1, EN: 0 }, set: { EN: 0 }, expected: { Q: 1 } },
+      { sequence: 0, step: 2, inputs: { D: 0, EN: 0 }, set: { D: 0 }, expected: { Q: 1 } },
+    ]);
   });
 });

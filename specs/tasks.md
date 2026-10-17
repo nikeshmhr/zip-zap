@@ -147,7 +147,7 @@
 
 ## M6: Sequential UX
 
-- [ ] **T6.1 Step table goal panel** · steps × pins with the CLK edge marked
+- [x] **T6.1 Step table goal panel** · steps × pins with the CLK edge marked
   - Done when: the D Latch and DFF goals render clearly.
 - [ ] **T6.2 Step scrubbing** · results jump to the first failing step; scrubbing replays the circuit to any step
   - Done when: a broken DFF shows the failing step and the canvas state at that step.
