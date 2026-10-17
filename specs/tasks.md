@@ -85,7 +85,7 @@
   - Done when: the content and chip-consistency tests pass for all six, including Tiny RAM.
   - Decided: sequences never change LOAD or the address while CLK is high (`clock.holdWhileHigh`), so clock-gating designs aren't failed; the Register concept card still teaches "don't gate the clock". Data inputs may change while CLK is high, which is how the tests tell a flip-flop from a latch.
   - Use warm-up steps (`expect: {}`) where the power-on state is arbitrary (flip-flops, registers, RAM).
-- [ ] **T2.8 Performance test** · the Tiny RAM full suite is timed in a test
+- [x] **T2.8 Performance test** · the Tiny RAM full suite is timed in a test
   - Done when: it is asserted < 250 ms (spec AC 9).
 
 **🎯 Milestone check:** all 24 levels are proven solvable headlessly.
