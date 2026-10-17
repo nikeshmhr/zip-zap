@@ -9,6 +9,7 @@ describe('shortcutFor', () => {
     expect(shortcutFor({ key: 'R', shiftKey: true })).toEqual({ type: 'rotate' });
     expect(shortcutFor({ key: 'Escape' })).toEqual({ type: 'cancel' });
     expect(shortcutFor({ key: '?', shiftKey: true })).toEqual({ type: 'help' });
+    expect(shortcutFor({ key: 'f' })).toEqual({ type: 'fit' });
   });
 
   it('accepts ⌘ or Ctrl as the modifier', () => {

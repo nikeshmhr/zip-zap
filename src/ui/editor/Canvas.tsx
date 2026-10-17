@@ -7,7 +7,15 @@ import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { Point } from '../../engine/model.ts';
 import type { Camera, Size } from './camera.ts';
-import { UNIT, panBy, screenToWorld, viewBox, zoomAt } from './camera.ts';
+import {
+  UNIT,
+  panBy,
+  screenToWorld,
+  viewBox,
+  wheelPixels,
+  wheelZoomFactor,
+  zoomAt,
+} from './camera.ts';
 import styles from './Canvas.module.css';
 
 export interface CanvasPointerEvent {
@@ -100,10 +108,12 @@ export function Canvas(props: CanvasProps) {
       const rect = svg.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       const cam = cameraRef.current;
+      const dx = wheelPixels(e.deltaX, e.deltaMode);
+      const dy = wheelPixels(e.deltaY, e.deltaMode);
       if (e.ctrlKey || e.metaKey) {
-        onCameraChangeRef.current(zoomAt(cam, point, Math.exp(-e.deltaY * 0.01)));
+        onCameraChangeRef.current(zoomAt(cam, point, wheelZoomFactor(dy)));
       } else {
-        onCameraChangeRef.current(panBy(cam, { x: -e.deltaX, y: -e.deltaY }));
+        onCameraChangeRef.current(panBy(cam, { x: -dx, y: -dy }));
       }
     };
     svg.addEventListener('wheel', onWheel, { passive: false });

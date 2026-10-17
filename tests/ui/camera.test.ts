@@ -9,6 +9,8 @@ import {
   screenToWorld,
   snap,
   viewBox,
+  wheelPixels,
+  wheelZoomFactor,
   worldToScreen,
   zoomAt,
 } from '../../src/ui/editor/camera.ts';
@@ -62,5 +64,18 @@ describe('camera', () => {
 
   it('snaps to the grid', () => {
     expect(snap({ x: 1.4, y: -2.6 })).toEqual({ x: 1, y: -3 });
+  });
+});
+
+describe('wheel zoom', () => {
+  it('zooms a mouse-wheel notch by a fixed ~20%, in either unit', () => {
+    expect(wheelZoomFactor(wheelPixels(100, 0))).toBeCloseTo(Math.exp(-0.18));
+    expect(wheelZoomFactor(wheelPixels(3, 1))).toBeCloseTo(Math.exp(-0.18));
+    expect(wheelZoomFactor(wheelPixels(-100, 0))).toBeCloseTo(Math.exp(0.18));
+  });
+
+  it('zooms smoothly in proportion for small trackpad pinch deltas', () => {
+    expect(wheelZoomFactor(4)).toBeCloseTo(Math.exp(-0.04));
+    expect(wheelZoomFactor(0)).toBe(1);
   });
 });

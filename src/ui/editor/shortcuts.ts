@@ -12,6 +12,7 @@ export type ShortcutAction =
   | { type: 'selectAll' }
   | { type: 'cancel' }
   | { type: 'help' }
+  | { type: 'fit' }
   /** Toggle the n-th level input (0-based). */
   | { type: 'toggleInput'; index: number };
 
@@ -46,6 +47,8 @@ export function shortcutFor(e: KeyLike): ShortcutAction | null {
       return { type: 'rotate' };
     case '?':
       return { type: 'help' };
+    case 'f':
+      return { type: 'fit' };
   }
   if (/^[1-9]$/.test(key)) return { type: 'toggleInput', index: Number(key) - 1 };
   return null;
@@ -64,6 +67,7 @@ export function shortcutList(mod: string): { keys: string; action: string }[] {
     { keys: 'Shift + click', action: 'Add to selection' },
     { keys: 'Space + drag', action: 'Pan (or middle-drag, or scroll)' },
     { keys: `${mod} + scroll`, action: 'Zoom (or pinch)' },
+    { keys: 'F', action: 'Fit the circuit in view' },
     { keys: 'Esc', action: 'Cancel the current drag' },
     { keys: '?', action: 'Show this list' },
   ];

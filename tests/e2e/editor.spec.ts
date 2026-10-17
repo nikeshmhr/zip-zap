@@ -172,3 +172,19 @@ test('keyboard shortcuts: undo/redo, duplicate, rotate, select all, inputs and h
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveCount(0);
 });
+
+test('zooms gently with the wheel and fits the view again with F', async ({ page }) => {
+  const canvas = page.getByRole('application', { name: 'Sandbox circuit' });
+  const viewWidth = async () => Number((await canvas.getAttribute('viewBox'))!.split(' ')[2]);
+  const initial = await viewWidth();
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.keyboard.down('Control');
+  await page.mouse.wheel(0, -100);
+  await page.keyboard.up('Control');
+  const zoomed = await viewWidth();
+  expect(initial / zoomed).toBeGreaterThan(1.1);
+  expect(initial / zoomed).toBeLessThan(1.4);
+  await page.keyboard.press('f');
+  await expect.poll(viewWidth).toBeCloseTo(initial, 3);
+});

@@ -2,7 +2,14 @@ import { isApple, shortcutList } from './shortcuts.ts';
 import styles from './HelpPanel.module.css';
 
 /** A "?" button that opens the list of editor shortcuts. */
-export function HelpPanel({ open, onToggle }: { open: boolean; onToggle(): void }) {
+export interface HelpPanelProps {
+  open: boolean;
+  onToggle(): void;
+  onFit(): void;
+}
+
+/** Bottom-right view controls: fit the circuit in view, and the shortcuts list. */
+export function HelpPanel({ open, onToggle, onFit }: HelpPanelProps) {
   return (
     <div className={styles.help}>
       {open && (
@@ -25,16 +32,27 @@ export function HelpPanel({ open, onToggle }: { open: boolean; onToggle(): void 
           </dl>
         </div>
       )}
-      <button
-        type="button"
-        className={styles.button}
-        aria-expanded={open}
-        aria-controls="editor-shortcuts"
-        aria-label="Keyboard shortcuts"
-        onClick={onToggle}
-      >
-        ?
-      </button>
+      <div className={styles.buttons}>
+        <button
+          type="button"
+          className={styles.button}
+          aria-label="Fit circuit in view"
+          title="Fit circuit in view (F)"
+          onClick={onFit}
+        >
+          ⤢
+        </button>
+        <button
+          type="button"
+          className={styles.button}
+          aria-expanded={open}
+          aria-controls="editor-shortcuts"
+          aria-label="Keyboard shortcuts"
+          onClick={onToggle}
+        >
+          ?
+        </button>
+      </div>
     </div>
   );
 }

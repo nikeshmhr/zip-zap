@@ -80,16 +80,14 @@ export function CircuitEditor(props: CircuitEditorProps) {
   const [camera, setCamera] = useState<Camera>({ x: -4, y: -4, zoom: 1 });
   const [viewport, setViewport] = useState<Size>({ width: 0, height: 0 });
   const fitted = useRef(false);
-  const onSizeChange = useCallback(
+  /** Fits every part into a viewport of the given size. */
+  const fitTo = useCallback(
     (size: Size) => {
-      setViewport(size);
-      if (fitted.current || size.width === 0) return;
-      fitted.current = true;
       const rects = store.getState().circuit.components.flatMap((c) => {
         const g = geomOf(c.kind);
         return g ? [partRect(c, g)] : [];
       });
-      if (rects.length === 0) return;
+      if (rects.length === 0 || size.width === 0) return;
       const bounds = {
         minX: Math.min(...rects.map((r) => r.x)) - 4,
         minY: Math.min(...rects.map((r) => r.y)) - 2,
@@ -100,12 +98,26 @@ export function CircuitEditor(props: CircuitEditorProps) {
     },
     [store, geomOf],
   );
+  const onSizeChange = useCallback(
+    (size: Size) => {
+      setViewport(size);
+      if (fitted.current || size.width === 0) return;
+      fitted.current = true;
+      fitTo(size);
+    },
+    [fitTo],
+  );
 
   // Interaction mode: a ref for handlers, state for rendering previews.
   const modeRef = useRef<Mode>(IDLE);
   const [mode, setMode] = useState<Mode>(IDLE);
   const [toast, showToast] = useToast();
   const [helpOpen, setHelpOpen] = useState(false);
+  // The key handler is registered once; it reaches the latest fit through this ref.
+  const fitRef = useRef(() => {});
+  useEffect(() => {
+    fitRef.current = () => fitTo(viewport);
+  });
 
   const context = (): InteractionContext => ({
     selection: store.getState().selection,
@@ -206,6 +218,9 @@ export function CircuitEditor(props: CircuitEditorProps) {
           break;
         case 'help':
           setHelpOpen((open) => !open);
+          break;
+        case 'fit':
+          fitRef.current();
           break;
         case 'toggleInput': {
           const name = s.circuit.components.filter((c) => c.kind === 'in')[action.index]?.label;
@@ -361,7 +376,11 @@ export function CircuitEditor(props: CircuitEditorProps) {
         overlay={
           <>
             <StatusBadge snapshot={snapshot} />
-            <HelpPanel open={helpOpen} onToggle={() => setHelpOpen((open) => !open)} />
+            <HelpPanel
+              open={helpOpen}
+              onToggle={() => setHelpOpen((open) => !open)}
+              onFit={() => fitTo(viewport)}
+            />
             {toast && (
               <div key={toast.key} className={styles.toast} role="status">
                 {toast.message}

@@ -79,3 +79,19 @@ export const viewBox = (camera: Camera, viewport: Size) =>
   `${camera.x} ${camera.y} ${viewport.width / scale(camera)} ${viewport.height / scale(camera)}`;
 
 export const snap = (p: Point): Point => ({ x: Math.round(p.x), y: Math.round(p.y) });
+
+/** Wheel deltas in pixels, whatever unit the browser reported them in. */
+export function wheelPixels(delta: number, deltaMode: number): number {
+  if (deltaMode === 1) return delta * 16; // lines
+  if (deltaMode === 2) return delta * 400; // pages
+  return delta;
+}
+
+/**
+ * Zoom factor for one wheel event. A mouse-wheel notch (a large delta) zooms a fixed ~20%;
+ * the small, frequent deltas of a trackpad pinch zoom smoothly in proportion.
+ */
+export function wheelZoomFactor(deltaPixels: number): number {
+  const step = Math.abs(deltaPixels) >= 40 ? Math.sign(deltaPixels) * 0.18 : deltaPixels * 0.01;
+  return Math.exp(-step);
+}
