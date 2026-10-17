@@ -2,9 +2,10 @@
  * The sandbox (spec §9): free building with the basic parts, every unlocked chip, and as many
  * switches and lamps as you like. Saved like any level.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { catalogue } from '../../content/index.ts';
-import type { ComponentKind } from '../../engine/model.ts';
+import type { ChipKind, ComponentKind } from '../../engine/model.ts';
+import { ChipViewer } from '../level/ChipViewer.tsx';
 import { startCircuit } from '../../state/editing.ts';
 import { levelEditor, useProgress } from '../../state/session.ts';
 import { unlockedKinds } from '../../state/unlocks.ts';
@@ -23,6 +24,7 @@ export function SandboxScreen() {
     [levels],
   );
   const chips = toolbox.filter((k) => k.startsWith('chip:')).length;
+  const [chipPath, setChipPath] = useState<readonly ChipKind[]>([]);
 
   return (
     <div className={styles.sandbox}>
@@ -51,8 +53,10 @@ export function SandboxScreen() {
         displayName={catalogue.displayName}
         label="Sandbox circuit"
         family={chipFamily}
+        onOpenChip={(kind) => setChipPath([kind])}
         toolbox={toolbox}
       />
+      <ChipViewer path={chipPath} onPathChange={setChipPath} />
     </div>
   );
 }

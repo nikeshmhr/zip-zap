@@ -10,6 +10,8 @@ import { useLevelStatuses, useNextLevel } from '../../state/levelStatus.ts';
 import { levelEditor, useProgress } from '../../state/session.ts';
 import { CircuitEditor } from '../editor/CircuitEditor.tsx';
 import { Placeholder } from '../screens/Placeholder.tsx';
+import type { ChipKind } from '../../engine/model.ts';
+import { ChipViewer } from './ChipViewer.tsx';
 import { ConceptCard } from './ConceptCard.tsx';
 import { GoalPanel } from './GoalPanel.tsx';
 import { formatCount, solveMetrics } from './solve.ts';
@@ -58,6 +60,7 @@ function Level({ level }: { level: LevelDef }) {
   const chapter = catalogue.chapters.find((c) => c.id === level.chapter);
   const progress = useProgress((s) => s.get(level.id));
   const [solved, setSolved] = useState<SolveResult | null>(null);
+  const [chipPath, setChipPath] = useState<readonly ChipKind[]>([]);
   // The concept card opens by itself on a level's first visit.
   const [conceptOpen, setConceptOpen] = useState(
     () => !useProgress.getState().get(level.id).conceptSeen,
@@ -102,6 +105,7 @@ function Level({ level }: { level: LevelDef }) {
           label={`Level ${level.id} circuit`}
           options={options}
           family={chipFamily}
+          onOpenChip={(kind) => setChipPath([kind])}
           toolbox={catalogue.toolbox(level.id)}
         />
         <aside className={styles.panel} aria-label="Level">
@@ -119,6 +123,7 @@ function Level({ level }: { level: LevelDef }) {
       </div>
       <SolveDialog level={level} result={solved} onClose={() => setSolved(null)} />
       <ConceptCard level={level} open={conceptOpen} onClose={closeConcept} />
+      <ChipViewer path={chipPath} onPathChange={setChipPath} />
     </div>
   );
 }

@@ -12,7 +12,7 @@ export interface ModalProps {
   /** Accessible name. */
   label: string;
   children: ReactNode;
-  size?: 'small' | 'medium';
+  size?: 'small' | 'medium' | 'large';
 }
 
 export function Modal({ open, onClose, label, children, size = 'medium' }: ModalProps) {

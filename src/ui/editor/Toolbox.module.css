@@ -60,3 +60,36 @@
   line-height: 1.2;
   text-align: center;
 }
+
+.slot {
+  position: relative;
+}
+
+.inspect {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 100ms;
+}
+
+.slot:hover .inspect,
+.inspect:focus-visible {
+  opacity: 1;
+}
+
+.inspect:hover {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+}

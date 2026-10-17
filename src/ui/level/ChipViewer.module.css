@@ -1,0 +1,48 @@
+.viewer {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.crumbs {
+  font-size: 18px;
+}
+
+.crumbs button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--selection);
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.close {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.canvas {
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}

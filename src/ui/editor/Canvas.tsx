@@ -33,6 +33,8 @@ export interface CanvasProps {
   onPointerUp?(e: CanvasPointerEvent): void;
   /** Data dropped onto the canvas (e.g. a part from the toolbox), at a world position. */
   onDropData?(data: DataTransfer, world: Point): void;
+  /** A double-click, with the element under the pointer (pointer capture hides the target). */
+  onDoubleClick?(under: Element | null): void;
   /** Drawn in screen space over the canvas (badges, toasts). */
   overlay?: ReactNode;
   children?: ReactNode;
@@ -163,6 +165,9 @@ export function Canvas(props: CanvasProps) {
           props.onPointerUp?.(toCanvasEvent(event));
         }}
         onPointerCancel={() => setPanning(null)}
+        onDoubleClick={(event) =>
+          props.onDoubleClick?.(document.elementFromPoint(event.clientX, event.clientY))
+        }
         onDragOver={(event) => {
           if (props.onDropData) {
             event.preventDefault();

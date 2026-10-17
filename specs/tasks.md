@@ -161,7 +161,7 @@
 
 ## M7: Polish and release
 
-- [ ] **T7.1 Open-chip view** _(Should)_ · read-only canvas showing the player's design inside any unlocked chip
+- [x] **T7.1 Open-chip view** _(Should)_ · read-only canvas showing the player's design inside any unlocked chip
   - Done when: opening Full Adder from the toolbox shows the player's design.
 - [ ] **T7.2 Feel** · solve animation, optional sounds (relay click, solve chime) respecting settings
   - Done when: the effects play, and none play when sound or motion is turned off.

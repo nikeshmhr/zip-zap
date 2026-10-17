@@ -2,7 +2,7 @@
  * The parts the player may place (plan §8). Drag an item onto the canvas, or click it (or
  * press Enter) to drop it in the middle of the view.
  */
-import type { ComponentKind } from '../../engine/model.ts';
+import type { ChipKind, ComponentKind } from '../../engine/model.ts';
 import { isChipKind } from '../../engine/model.ts';
 import type { PartGeom } from './geometry.ts';
 import { PartView } from './PartView.tsx';
@@ -16,6 +16,8 @@ export interface ToolboxProps {
   geomOf(kind: ComponentKind): PartGeom | undefined;
   onAdd(kind: ComponentKind): void;
   family?(kind: ComponentKind): string | undefined;
+  /** Looks inside a chip. */
+  onInspect?(kind: ChipKind): void;
 }
 
 function Preview({
@@ -48,7 +50,7 @@ function Preview({
   );
 }
 
-export function Toolbox({ kinds, displayName, geomOf, onAdd, family }: ToolboxProps) {
+export function Toolbox({ kinds, displayName, geomOf, onAdd, family, onInspect }: ToolboxProps) {
   const groups = [
     { title: 'Parts', kinds: kinds.filter((k) => !isChipKind(k)) },
     { title: 'Your chips', kinds: kinds.filter(isChipKind) },
@@ -64,7 +66,7 @@ export function Toolbox({ kinds, displayName, geomOf, onAdd, family }: ToolboxPr
               const geom = geomOf(kind);
               const name = displayName(kind);
               return (
-                <li key={kind}>
+                <li key={kind} className={styles.slot}>
                   <button
                     type="button"
                     className={styles.item}
@@ -82,6 +84,17 @@ export function Toolbox({ kinds, displayName, geomOf, onAdd, family }: ToolboxPr
                     )}
                     <span className={styles.name}>{name}</span>
                   </button>
+                  {onInspect && isChipKind(kind) && (
+                    <button
+                      type="button"
+                      className={styles.inspect}
+                      aria-label={`Look inside ${name}`}
+                      title={`Look inside ${name}`}
+                      onClick={() => onInspect(kind)}
+                    >
+                      ⌕
+                    </button>
+                  )}
                 </li>
               );
             })}

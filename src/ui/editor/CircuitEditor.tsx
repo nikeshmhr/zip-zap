@@ -4,7 +4,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand';
-import type { Bit, ComponentKind, Point } from '../../engine/model.ts';
+import type { Bit, ChipKind, ComponentKind, Point } from '../../engine/model.ts';
+import { isChipKind } from '../../engine/model.ts';
 import type { ComponentResolver } from '../../engine/primitives.ts';
 import type { ValidateOptions } from '../../engine/validate.ts';
 import type { EditorStore } from '../../state/editorStore.ts';
@@ -52,6 +53,10 @@ export interface CircuitEditorProps {
   toolbox: readonly ComponentKind[];
   /** Chip family for tinting, if any. */
   family?(kind: ComponentKind): string | undefined;
+  /** View only: no toolbox and no editing, but switches still toggle. */
+  readOnly?: boolean;
+  /** Called to look inside a chip (double-click on it, or its toolbox button). */
+  onOpenChip?(kind: ChipKind): void;
 }
 
 /** Shows a short message over the canvas, e.g. why a wire was refused. */
@@ -72,7 +77,9 @@ const isTyping = (e: KeyboardEvent) =>
   e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
 
 export function CircuitEditor(props: CircuitEditorProps) {
-  const { store, resolve, displayName, label, options, toolbox, family } = props;
+  const { store, resolve, displayName, label, options, toolbox, family, readOnly, onOpenChip } =
+    props;
+  const rootRef = useRef<HTMLDivElement>(null);
   const circuit = useStore(store, (s) => s.circuit);
   const selection = useStore(store, (s) => s.selection);
   const inputs = useStore(store, (s) => s.inputs);
@@ -215,8 +222,12 @@ export function CircuitEditor(props: CircuitEditorProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e)) return;
+      // With a dialog open, only an editor inside that dialog listens.
+      const dialog = document.querySelector('dialog[open]');
+      if (dialog && !dialog.contains(rootRef.current)) return;
       const action = shortcutFor(e);
       if (!action) return;
+      if (readOnly && !['cancel', 'help', 'fit', 'toggleInput'].includes(action.type)) return;
       const s = store.getState();
       const idle = modeRef.current.kind === 'idle';
       if (action.type === 'cancel') {
@@ -418,20 +429,23 @@ export function CircuitEditor(props: CircuitEditorProps) {
   };
 
   return (
-    <div className={styles.editor}>
-      <Toolbox
-        kinds={toolbox}
-        displayName={displayName}
-        geomOf={geomOf}
-        family={family}
-        onAdd={(kind) =>
-          place(
-            kind,
-            screenToWorld({ x: viewport.width / 2, y: viewport.height / 2 }, camera),
-            true,
-          )
-        }
-      />
+    <div className={styles.editor} data-read-only={readOnly || undefined} ref={rootRef}>
+      {!readOnly && (
+        <Toolbox
+          kinds={toolbox}
+          displayName={displayName}
+          geomOf={geomOf}
+          family={family}
+          onInspect={onOpenChip}
+          onAdd={(kind) =>
+            place(
+              kind,
+              screenToWorld({ x: viewport.width / 2, y: viewport.height / 2 }, camera),
+              true,
+            )
+          }
+        />
+      )}
       <Canvas
         camera={camera}
         onCameraChange={setCamera}
@@ -440,6 +454,8 @@ export function CircuitEditor(props: CircuitEditorProps) {
         onPointerDown={(e) => {
           if (e.event.button !== 0) return;
           setHelpOpen(false);
+          // View only: switches toggle, nothing else.
+          if (readOnly && toInput(e).hit.type !== 'toggle') return;
           e.event.currentTarget.setPointerCapture(e.event.pointerId);
           run(pointerDown(modeRef.current, toInput(e), context()));
         }}
@@ -448,6 +464,12 @@ export function CircuitEditor(props: CircuitEditorProps) {
           run(pointerMove(modeRef.current, toInput(e), context()));
         }}
         onPointerUp={(e) => run(pointerUp(modeRef.current, toInput(e), context()))}
+        onDoubleClick={(under) => {
+          const hit = hitTest(under);
+          if (hit.type !== 'part') return;
+          const kind = store.getState().circuit.components.find((c) => c.id === hit.id)?.kind;
+          if (kind && isChipKind(kind)) onOpenChip?.(kind);
+        }}
         onDropData={(data, world) => {
           const kind = data.getData(KIND_MIME) as ComponentKind;
           if (kind) place(kind, world);

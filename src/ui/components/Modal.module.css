@@ -12,6 +12,15 @@
   width: min(420px, calc(100% - 32px));
 }
 
+.modal[data-size='large'] {
+  width: min(1100px, calc(100% - 32px));
+  height: min(760px, calc(100% - 32px));
+}
+
+.modal[data-size='large'] .content {
+  height: 100%;
+}
+
 .modal::backdrop {
   background: rgb(0 0 0 / 0.35);
 }

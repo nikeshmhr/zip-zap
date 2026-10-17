@@ -29,6 +29,17 @@ export function chipDesign(id: ChipId): Circuit | undefined {
   return catalogue.referenceCircuit(levelId);
 }
 
+/** A chip's design to show inside it, and whether it's the player's own. */
+export function chipSource(
+  id: ChipId,
+): { design: Circuit; mine: boolean; levelId: string } | undefined {
+  const levelId = chipLevel.get(id);
+  if (!levelId) return undefined;
+  const design = useProgress.getState().get(levelId).design;
+  if (design && validate(design, catalogue.resolve).ok) return { design, mine: true, levelId };
+  return { design: catalogue.referenceCircuit(levelId), mine: false, levelId };
+}
+
 export interface SolveMetrics {
   /** Relays in Chapter 0, NAND gates after (spec §9). */
   count: number;
