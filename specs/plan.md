@@ -10,23 +10,23 @@
 
 A static, client-only web app written in **TypeScript**. The core is a **headless simulation engine** with no dependency on the UI or the browser. Levels are **typed data modules**, and every level ships with a **reference solution** that automated tests check. The UI is **React**, with an **SVG** circuit editor. Progress is saved to **localStorage**, with a versioned save format.
 
-The key architectural decision: **a chip runs as a single behavioural component**, simulated from its level's specification rather than by expanding the player's design inside it. That is exactly what the spec requires (§5.4). It also means simulation cost depends on how many components are *on screen*, not how many are nested, which is what will let the future CPU phase run fast.
+The key architectural decision: **a chip runs as a single behavioural component**, simulated from its level's specification rather than by expanding the player's design inside it. That is exactly what the spec requires (§5.4). It also means simulation cost depends on how many components are _on screen_, not how many are nested, which is what will let the future CPU phase run fast.
 
 ## 2. Tech stack
 
-| Concern | Choice | Why |
-|---|---|---|
-| Language | TypeScript (strict) | Typed level data and engine; safe refactors as the game grows into the CPU phase |
-| Build / dev server | Vite | Fast, minimal config, static output |
-| UI | React 19 | Mature, good tooling; panels and screens are ordinary UI work |
-| Editor rendering | SVG (React-rendered) | Crisp at any zoom; easy hit-testing and CSS styling; enough for ≤ a few hundred elements. Rendering sits behind a thin layer so it can move to Canvas later if needed. |
-| State | Zustand + Immer | Small and simple; Immer gives cheap immutable snapshots for undo/redo |
-| Runtime validation | Zod | Validate imported save files and migrations |
-| Unit / content tests | Vitest | Same toolchain as Vite; fast |
-| End-to-end tests | Playwright | Real-browser tests for the critical player journeys |
-| Package manager | pnpm (Node 24) | Already installed |
-| Lint / format | ESLint + Prettier | Standard |
-| Hosting | Static site (GitHub Pages / Netlify / Vercel) | No backend needed; decided at release |
+| Concern              | Choice                                        | Why                                                                                                                                                                    |
+| -------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Language             | TypeScript (strict)                           | Typed level data and engine; safe refactors as the game grows into the CPU phase                                                                                       |
+| Build / dev server   | Vite                                          | Fast, minimal config, static output                                                                                                                                    |
+| UI                   | React 19                                      | Mature, good tooling; panels and screens are ordinary UI work                                                                                                          |
+| Editor rendering     | SVG (React-rendered)                          | Crisp at any zoom; easy hit-testing and CSS styling; enough for ≤ a few hundred elements. Rendering sits behind a thin layer so it can move to Canvas later if needed. |
+| State                | Zustand + Immer                               | Small and simple; Immer gives cheap immutable snapshots for undo/redo                                                                                                  |
+| Runtime validation   | Zod                                           | Validate imported save files and migrations                                                                                                                            |
+| Unit / content tests | Vitest                                        | Same toolchain as Vite; fast                                                                                                                                           |
+| End-to-end tests     | Playwright                                    | Real-browser tests for the critical player journeys                                                                                                                    |
+| Package manager      | pnpm (Node 24)                                | Already installed                                                                                                                                                      |
+| Lint / format        | ESLint + Prettier                             | Standard                                                                                                                                                               |
+| Hosting              | Static site (GitHub Pages / Netlify / Vercel) | No backend needed; decided at release                                                                                                                                  |
 
 Library versions: latest stable at scaffold time, pinned in the lockfile.
 
@@ -89,23 +89,39 @@ specs/
 
 ```ts
 type ComponentKind =
-  | 'power' | 'const0' | 'const1'
-  | 'relayNO' | 'relayNC' | 'nand'
-  | 'in' | 'out'                 // level IO, fixed at canvas edges
-  | `chip:${ChipId}`;            // any unlocked chip, e.g. 'chip:xor'
+  | 'power'
+  | 'const0'
+  | 'const1'
+  | 'relayNO'
+  | 'relayNC'
+  | 'nand'
+  | 'in'
+  | 'out' // level IO, fixed at canvas edges
+  | `chip:${ChipId}`; // any unlocked chip, e.g. 'chip:xor'
 
 interface ComponentInstance {
   id: string;
   kind: ComponentKind;
   pos: { x: number; y: number }; // grid units
   rot: 0 | 90 | 180 | 270;
-  label?: string;                // for 'in'/'out': the pin name, e.g. 'A', 'SUM'
+  label?: string; // for 'in'/'out': the pin name, e.g. 'A', 'SUM'
 }
 
-interface PinRef { comp: string; pin: string }
-interface Wire { id: string; from: PinRef; to: PinRef; bends?: { x: number; y: number }[] }
+interface PinRef {
+  comp: string;
+  pin: string;
+}
+interface Wire {
+  id: string;
+  from: PinRef;
+  to: PinRef;
+  bends?: { x: number; y: number }[];
+}
 
-interface Circuit { components: ComponentInstance[]; wires: Wire[] }
+interface Circuit {
+  components: ComponentInstance[];
+  wires: Wire[];
+}
 ```
 
 Layout (position, rotation, bend points) lives in the circuit, but simulation ignores it.
@@ -117,17 +133,17 @@ Every kind resolves to a `ComponentDef`:
 ```ts
 interface ComponentDef {
   kind: ComponentKind;
-  inputs: string[];   // pin names
+  inputs: string[]; // pin names
   outputs: string[];
-  wiredOrOutput?: boolean;   // true only for relays (spec §5.2)
-  init(): State;             // stateless components return null
+  wiredOrOutput?: boolean; // true only for relays (spec §5.2)
+  init(): State; // stateless components return null
   step(inputs: Bits, state: State): { outputs: Bits; state: State };
 }
 ```
 
 - **Primitives** are hand-written: `nand`, `relayNO` (`out = in & coil`), `relayNC` (`out = in & !coil`), `power`, `const0/1`.
 - **Chips** are generated from the level that unlocks them (§5.1). A combinational chip wraps its truth function. A sequential chip wraps a small state machine (for example a DFF stores `q` and `prevClk`).
-- Every component has a **1-tick delay**: outputs computed at tick *t* appear on nets at tick *t+1*.
+- Every component has a **1-tick delay**: outputs computed at tick _t_ appear on nets at tick _t+1_.
 
 ### 4.3 Compile: Circuit → Netlist
 
@@ -155,7 +171,8 @@ settle(maxTicks):
 - **Stateful chips** update their state only in the compute phase of a tick where they are evaluated. Because every input change makes a component "dirty", edge detection works.
 - **Live play mode** reuses the same `settle`. When the player toggles an input, the UI either calls `settle` directly or, for animation, steps one tick per frame.
 
-**Oscillation note.** A symmetric NOR SR latch whose inputs all start OFF oscillates under exact unit delay. Real hardware is *metastable* in the same situation. We keep this honest behaviour:
+**Oscillation note.** A symmetric NOR SR latch whose inputs all start OFF oscillates under exact unit delay. Real hardware is _metastable_ in the same situation. We keep this honest behaviour:
+
 - Sequential test sequences always start with a **forcing step** (for example Reset ON), so a correct latch settles deterministically.
 - In live mode, an unstable circuit shows an "oscillating" badge instead of freezing, and the SR Latch concept card explains why.
 
@@ -166,7 +183,10 @@ type Goal =
   | { kind: 'combinational'; fn: (inp: Bits) => Bits; display: 'table' | { formula: string } }
   | { kind: 'sequential'; model: SeqModel; sequences: Step[][] };
 
-interface Step { set: Partial<Bits>; expect?: 'model' | Partial<Bits> }
+interface Step {
+  set: Partial<Bits>;
+  expect?: 'model' | Partial<Bits>;
+}
 ```
 
 - **Combinational:** enumerate all 2ⁿ input rows. Reset the netlist each time, apply inputs, `settle`, compare outputs with `fn`. For n=9 (4-bit adder) that is 512 rows × a few dozen components, which takes well under 100 ms.
@@ -176,12 +196,12 @@ interface Step { set: Partial<Bits>; expect?: 'model' | Partial<Bits> }
 
 ### 4.6 Validation (before compile)
 
-| Check | Result |
-|---|---|
-| Wire references a missing component or pin | `invalid`: dropped on load and logged |
-| Output → output, or input → input | Prevented in the editor; `invalid` in the engine |
-| Two non-relay drivers on one net | `short`: the wires are highlighted and testing is blocked |
-| Component kind not in this level's toolbox | `invalid`: prevented in the editor |
+| Check                                             | Result                                                               |
+| ------------------------------------------------- | -------------------------------------------------------------------- |
+| Wire references a missing component or pin        | `invalid`: dropped on load and logged                                |
+| Output → output, or input → input                 | Prevented in the editor; `invalid` in the engine                     |
+| Two non-relay drivers on one net                  | `short`: the wires are highlighted and testing is blocked            |
+| Component kind not in this level's toolbox        | `invalid`: prevented in the editor                                   |
 | An `in`/`out` pin defined by the level is missing | Impossible in practice; IO components are fixed and can't be deleted |
 
 ### 4.7 Metrics (static analysis of the player's designs)
@@ -219,11 +239,14 @@ Writing coordinates by hand for 24 circuits would be tedious, so reference solut
 
 ```ts
 reference: (b) => {
-  const n1 = b.add('nand'), n2 = b.add('nand');
-  b.wire('A', n1.in('a')); b.wire('B', n1.in('b'));
-  b.wire(n1.out('out'), n2.in('a')); b.wire(n1.out('out'), n2.in('b'));
-  b.wire(n2.out('out'), 'OUT');   // AND = NOT(NAND)
-}
+  const n1 = b.add('nand'),
+    n2 = b.add('nand');
+  b.wire('A', n1.in('a'));
+  b.wire('B', n1.in('b'));
+  b.wire(n1.out('out'), n2.in('a'));
+  b.wire(n1.out('out'), n2.in('b'));
+  b.wire(n2.out('out'), 'OUT'); // AND = NOT(NAND)
+};
 ```
 
 The builder lays components out automatically (simple column layout), so reference solutions can also be opened in the editor, for debugging or as an optional "reveal" after solving.
@@ -245,7 +268,11 @@ interface SaveV1 {
   version: 1;
   progress: Record<LevelId, { solved: boolean; best?: { count: number; delay?: number } }>;
   circuits: Record<LevelId | 'sandbox', Circuit>;
-  settings: { theme: 'system' | 'light' | 'dark'; sound: boolean; reducedMotion: 'system' | boolean };
+  settings: {
+    theme: 'system' | 'light' | 'dark';
+    sound: boolean;
+    reducedMotion: 'system' | boolean;
+  };
 }
 ```
 
@@ -255,12 +282,12 @@ interface SaveV1 {
 
 ## 8. UI and screens
 
-| Screen | Contents |
-|---|---|
-| **Map** | Chapters as rows of level nodes (locked / available / solved, with best metrics). Entry point to the Sandbox. |
-| **Level** | Left: toolbox. Centre: canvas. Right: goal panel (truth table or step table), Run Tests button, results, hints. Top: title, concept-card button, metrics. A solve dialog shows metrics vs best and a "Next level" button. |
-| **Sandbox** | Canvas with every unlocked chip. The player can add free `in`/`out` pins. No goal. |
-| **Settings** | Theme, sound, motion, export/import save, reset progress (with confirmation). |
+| Screen       | Contents                                                                                                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Map**      | Chapters as rows of level nodes (locked / available / solved, with best metrics). Entry point to the Sandbox.                                                                                                             |
+| **Level**    | Left: toolbox. Centre: canvas. Right: goal panel (truth table or step table), Run Tests button, results, hints. Top: title, concept-card button, metrics. A solve dialog shows metrics vs best and a "Next level" button. |
+| **Sandbox**  | Canvas with every unlocked chip. The player can add free `in`/`out` pins. No goal.                                                                                                                                        |
+| **Settings** | Theme, sound, motion, export/import save, reset progress (with confirmation).                                                                                                                                             |
 
 Routing: a tiny hash-based router (`#/map`, `#/level/2.3`, `#/sandbox`). This works on any static host without server rewrites.
 
@@ -268,30 +295,30 @@ Visual style: clean and minimal. Light and dark themes come from CSS custom prop
 
 ## 9. Testing strategy
 
-| Layer | What | Tool |
-|---|---|---|
-| Engine unit | Each primitive; wired-OR nets; short detection; settle stability; oscillation detection; DFF edge behaviour; metrics on known circuits | Vitest |
-| **Content** (key layer) | For **every** level: (a) the reference solution passes all tests; (b) the empty circuit fails; (c) the reference uses only the allowed toolbox; (d) the concept card is ≤150 words and there are 2 hints; (e) sequential sequences start with a forcing step and never change data in the same step as a clock edge | Vitest |
-| Chip consistency | For every chip: running the **reference solution** through all input rows or sequences matches the **behavioural chip**. This proves the chip models are correct. | Vitest |
-| Performance | The Tiny RAM full test suite runs in < 1 s (asserted at < 250 ms in CI for headroom) | Vitest |
-| Persistence | Round-trip save; migration from a v1 fixture; a corrupt save is quarantined | Vitest |
-| E2E | Solve 0.1 by drag-and-wire; reload restores the circuit and progress; export then import into a fresh context; unlock flow 0.4 → chapter 1 | Playwright |
-| Visual / a11y | Greyscale screenshot check of ON/OFF wires; keyboard toggling of inputs; reduced-motion check | Playwright + manual |
+| Layer                   | What                                                                                                                                                                                                                                                                                                                | Tool                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Engine unit             | Each primitive; wired-OR nets; short detection; settle stability; oscillation detection; DFF edge behaviour; metrics on known circuits                                                                                                                                                                              | Vitest              |
+| **Content** (key layer) | For **every** level: (a) the reference solution passes all tests; (b) the empty circuit fails; (c) the reference uses only the allowed toolbox; (d) the concept card is ≤150 words and there are 2 hints; (e) sequential sequences start with a forcing step and never change data in the same step as a clock edge | Vitest              |
+| Chip consistency        | For every chip: running the **reference solution** through all input rows or sequences matches the **behavioural chip**. This proves the chip models are correct.                                                                                                                                                   | Vitest              |
+| Performance             | The Tiny RAM full test suite runs in < 1 s (asserted at < 250 ms in CI for headroom)                                                                                                                                                                                                                                | Vitest              |
+| Persistence             | Round-trip save; migration from a v1 fixture; a corrupt save is quarantined                                                                                                                                                                                                                                         | Vitest              |
+| E2E                     | Solve 0.1 by drag-and-wire; reload restores the circuit and progress; export then import into a fresh context; unlock flow 0.4 → chapter 1                                                                                                                                                                          | Playwright          |
+| Visual / a11y           | Greyscale screenshot check of ON/OFF wires; keyboard toggling of inputs; reduced-motion check                                                                                                                                                                                                                       | Playwright + manual |
 
 Acceptance-criteria traceability is in §12.
 
 ## 10. Milestones
 
-| # | Milestone | Outcome | Demo |
-|---|---|---|---|
-| M0 | **Scaffold** | Vite + React + TS + Vitest + Playwright + lint, CI script, folder skeleton | `pnpm dev` shows a placeholder; `pnpm test` is green |
-| M1 | **Engine** | Model, validate, compile, simulate, testRunner, metrics, builder, all with unit tests | Headless: build a NAND-based XOR in a test and get every row passing |
-| M2 | **Content (headless)** | All 24 levels with reference solutions and chip behaviours; content and chip-consistency tests green | The whole game is "solved" by the test suite with no UI yet |
-| M3 | **Editor core** | Canvas, pan/zoom, place/move/delete, wiring, live signals, undo/redo, toolbox | A circuit can be built and toggled live in a sandbox page |
-| M4 | **Level loop** | Level screen, goal table, run tests, results, solve flow, chip unlock, hints, concept cards | Chapters 0–3 playable end to end |
-| M5 | **Progression and persistence** | Map, unlock rules, autosave, export/import, settings | Reload-safe progress; E2E green |
-| M6 | **Sequential UX** | Step table, step scrubbing, waveform view, oscillation badge, Chapter 4 | Tiny RAM playable |
-| M7 | **Polish and release** | Themes, a11y pass, sound, solve animation, "open chip", performance check, deploy | Public URL |
+| #   | Milestone                       | Outcome                                                                                              | Demo                                                                 |
+| --- | ------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| M0  | **Scaffold**                    | Vite + React + TS + Vitest + Playwright + lint, CI script, folder skeleton                           | `pnpm dev` shows a placeholder; `pnpm test` is green                 |
+| M1  | **Engine**                      | Model, validate, compile, simulate, testRunner, metrics, builder, all with unit tests                | Headless: build a NAND-based XOR in a test and get every row passing |
+| M2  | **Content (headless)**          | All 24 levels with reference solutions and chip behaviours; content and chip-consistency tests green | The whole game is "solved" by the test suite with no UI yet          |
+| M3  | **Editor core**                 | Canvas, pan/zoom, place/move/delete, wiring, live signals, undo/redo, toolbox                        | A circuit can be built and toggled live in a sandbox page            |
+| M4  | **Level loop**                  | Level screen, goal table, run tests, results, solve flow, chip unlock, hints, concept cards          | Chapters 0–3 playable end to end                                     |
+| M5  | **Progression and persistence** | Map, unlock rules, autosave, export/import, settings                                                 | Reload-safe progress; E2E green                                      |
+| M6  | **Sequential UX**               | Step table, step scrubbing, waveform view, oscillation badge, Chapter 4                              | Tiny RAM playable                                                    |
+| M7  | **Polish and release**          | Themes, a11y pass, sound, solve animation, "open chip", performance check, deploy                    | Public URL                                                           |
 
 M1 and M2 come before any UI on purpose. They make sure every level is solvable and every rule is defined before we invest in the editor.
 
@@ -301,24 +328,24 @@ The details planning turned up (delay metric scope, chip timing, sequential test
 
 ## 12. Acceptance-criteria traceability
 
-| Spec AC | Verified by |
-|---|---|
-| 1. New player completes 0.1 unaided | Manual playtest (3+ people) + E2E solve of 0.1 |
-| 2. All 24 levels solvable with offered parts | Content tests (a) and (c) |
-| 3. Tests accept valid and reject invalid/shorted/unstable circuits | Engine unit tests + content test (b) |
-| 4. Unlocked chips appear and behave per spec | Chip-consistency tests + E2E unlock flow |
-| 5. Latches/RAM work; oscillation reported, not frozen | Engine oscillation tests + Chapter 4 content tests |
-| 6. Metrics shown; bests persist | Metrics unit tests + E2E reload |
-| 7. Progress restored; export/import round-trip | Persistence tests + E2E |
-| 8. ON/OFF distinguishable in greyscale | Playwright greyscale screenshot + manual review |
-| 9. Tiny RAM suite < 1 s | Performance test |
+| Spec AC                                                            | Verified by                                        |
+| ------------------------------------------------------------------ | -------------------------------------------------- |
+| 1. New player completes 0.1 unaided                                | Manual playtest (3+ people) + E2E solve of 0.1     |
+| 2. All 24 levels solvable with offered parts                       | Content tests (a) and (c)                          |
+| 3. Tests accept valid and reject invalid/shorted/unstable circuits | Engine unit tests + content test (b)               |
+| 4. Unlocked chips appear and behave per spec                       | Chip-consistency tests + E2E unlock flow           |
+| 5. Latches/RAM work; oscillation reported, not frozen              | Engine oscillation tests + Chapter 4 content tests |
+| 6. Metrics shown; bests persist                                    | Metrics unit tests + E2E reload                    |
+| 7. Progress restored; export/import round-trip                     | Persistence tests + E2E                            |
+| 8. ON/OFF distinguishable in greyscale                             | Playwright greyscale screenshot + manual review    |
+| 9. Tiny RAM suite < 1 s                                            | Performance test                                   |
 
 ## 13. Risks
 
-| Risk | Mitigation |
-|---|---|
+| Risk                                                                         | Mitigation                                                                                     |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | The free-canvas editor's feel (wiring, selection) takes longer than expected | Isolate it in M3 behind an interaction state machine; playtest early; keep auto-routing simple |
-| Chapter 4 timing surprises (latch glitches, oscillation) confuse players | Forcing steps, the oscillation badge, a concept card, and the step-by-step tick mode |
-| Behavioural chips diverge from player-built designs | Chip-consistency tests; setup/hold convention in sequences |
-| Difficulty spikes (XOR, the 4-bit subtractor, DFF) | Two-tier hints; playtest each chapter; per-level analytics (local only, could ship later) |
-| SVG performance in the later CPU phase | Rendering behind a layer that can move to Canvas; only visible components rendered |
+| Chapter 4 timing surprises (latch glitches, oscillation) confuse players     | Forcing steps, the oscillation badge, a concept card, and the step-by-step tick mode           |
+| Behavioural chips diverge from player-built designs                          | Chip-consistency tests; setup/hold convention in sequences                                     |
+| Difficulty spikes (XOR, the 4-bit subtractor, DFF)                           | Two-tier hints; playtest each chapter; per-level analytics (local only, could ship later)      |
+| SVG performance in the later CPU phase                                       | Rendering behind a layer that can move to Canvas; only visible components rendered             |

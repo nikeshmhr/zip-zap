@@ -15,7 +15,7 @@
   - Types: `feat`, `fix`, `test`, `refactor`, `docs`, `chore`, `build`, `ci`, `perf`, `style`.
   - Scopes: `engine`, `content`, `editor`, `ui`, `state`, `persistence`, `specs`, `deps`. Omit the scope for repo-wide changes.
 - **Done when** is the definition of done. If a task turns out to need a spec or plan change, update those files first, in the same commit.
-- *(optional)* marks a spec "Should/Could" item that can slip without blocking the MVP.
+- _(optional)_ marks a spec "Should/Could" item that can slip without blocking the MVP.
 
 ---
 
@@ -25,7 +25,7 @@
   - Done when: first commit contains `specs/` and the README.
 - [x] **T0.2 App scaffold** · Vite + React + TypeScript (strict; pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet) with pnpm; folder skeleton from plan §3 (`engine/ content/ state/ persistence/ ui/ app/`)
   - Done when: `pnpm dev` serves a "Zip Zap" placeholder page and `pnpm build` succeeds.
-- [ ] **T0.3 Lint and format** · ESLint (incl. a rule that `engine/` may not import from `ui/`, `state/` or React) + Prettier; `lint`, `format`, `typecheck` scripts
+- [x] **T0.3 Lint and format** · ESLint (incl. a rule that `engine/` may not import from `ui/`, `state/` or React) + Prettier; `lint`, `format`, `typecheck` scripts
   - Done when: an engine file that imports React fails lint.
 - [ ] **T0.4 Unit tests** · Vitest configured; one sample test; `pnpm check` = typecheck + lint + test
   - Done when: `pnpm check` passes.
@@ -72,6 +72,7 @@
 
   Also add a **chip-consistency** test (the reference solution vs the behavioural chip).
   - Done when: the harness runs green over the stub levels.
+
 - [ ] **T2.3 Chapter 0: Switches** · 0.1–0.4 with reference solutions, concept cards, hints
   - Done when: the content tests pass; the NAND chip is unlocked by 0.4; relays are excluded from Chapter 1 onward.
 - [ ] **T2.4 Chapter 1: Gates** · 1.1–1.6
@@ -148,22 +149,22 @@
   - Done when: the D Latch and DFF goals render clearly.
 - [ ] **T6.2 Step scrubbing** · results jump to the first failing step; scrubbing replays the circuit to any step
   - Done when: a broken DFF shows the failing step and the canvas state at that step.
-- [ ] **T6.3 Waveform view** *(Should)* · timing diagram of all IO pins over the steps, expected vs actual
+- [ ] **T6.3 Waveform view** _(Should)_ · timing diagram of all IO pins over the steps, expected vs actual
   - Done when: the waveform renders for 4.x levels, with mismatches highlighted.
-- [ ] **T6.4 Tick-by-tick mode** *(Should)* · advance one tick at a time; shows propagation and oscillation
+- [ ] **T6.4 Tick-by-tick mode** _(Should)_ · advance one tick at a time; shows propagation and oscillation
   - Done when: a player can watch an SR latch settle tick by tick.
 - [ ] **T6.5 Chapter 4 playthrough** · manually solve 4.1–4.6 in the UI and fix any friction
   - Done when: Tiny RAM is solved in the UI (spec AC 5).
 
 ## M7: Polish and release
 
-- [ ] **T7.1 Open-chip view** *(Should)* · read-only canvas showing the player's design inside any unlocked chip
+- [ ] **T7.1 Open-chip view** _(Should)_ · read-only canvas showing the player's design inside any unlocked chip
   - Done when: opening Full Adder from the toolbox shows the player's design.
 - [ ] **T7.2 Feel** · solve animation, optional sounds (relay click, solve chime) respecting settings
   - Done when: the effects play, and none play when sound or motion is turned off.
 - [ ] **T7.3 Accessibility pass** · focus order, keyboard toggles, colour-blind-safe palette check, Playwright greyscale ON/OFF screenshot test
   - Done when: the greyscale test passes (spec AC 8) and a keyboard-only player can toggle inputs and run tests.
-- [ ] **T7.4 Wire bend points** *(optional)* · manual bends on wires
+- [ ] **T7.4 Wire bend points** _(optional)_ · manual bends on wires
   - Done when: the player can add and drag bend points on a wire.
 - [ ] **T7.5 Performance and bundle check** · profile a large Tiny RAM circuit while editing; check bundle size
   - Done when: editing stays at 60 fps and the initial load is < 300 KB gzipped.

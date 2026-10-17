@@ -8,11 +8,11 @@ Start with a handful of electromagnetic relays, discover the NAND gate, then cli
 
 In development. The project follows spec-driven development:
 
-| Document | What it covers |
-|---|---|
-| [`specs/spec.md`](specs/spec.md) | **What** the game is and why: players, mechanics, levels, acceptance criteria |
-| [`specs/plan.md`](specs/plan.md) | **How** it's built: stack, architecture, engine design, testing |
-| [`specs/tasks.md`](specs/tasks.md) | Ordered implementation tasks with a "done when" check for each |
+| Document                           | What it covers                                                                |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
+| [`specs/spec.md`](specs/spec.md)   | **What** the game is and why: players, mechanics, levels, acceptance criteria |
+| [`specs/plan.md`](specs/plan.md)   | **How** it's built: stack, architecture, engine design, testing               |
+| [`specs/tasks.md`](specs/tasks.md) | Ordered implementation tasks with a "done when" check for each                |
 
 ## Development
 
@@ -22,6 +22,8 @@ Requires Node 24+ and pnpm.
 pnpm install
 pnpm dev        # start the dev server
 pnpm build      # typecheck and build to dist/
+pnpm lint       # ESLint, including layer-boundary rules
+pnpm format     # Prettier
 ```
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
