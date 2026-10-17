@@ -38,7 +38,7 @@
   - Done when: the types compile, and the helpers (bits ↔ number, row enumeration) have tests.
 - [x] **T1.2 Primitives** · `ComponentDef` interface; `nand`, `relayNO`, `relayNC`, `power`, `const0/1`, `in`, `out` (plan §4.2)
   - Done when: each primitive's `step` is tested against its truth table.
-- [ ] **T1.3 Circuit builder** · code-first API (`b.add`, `b.wire`, named IO pins) with automatic column layout (plan §5.2)
+- [x] **T1.3 Circuit builder** · code-first API (`b.add`, `b.wire`, named IO pins) with automatic column layout (plan §5.2)
   - Done when: a builder-made XOR-from-NAND produces a valid `Circuit` with non-overlapping positions.
 - [ ] **T1.4 Validation** · dangling refs, wrong direction, one wire per input, relay wired-OR vs **short**, toolbox check (plan §4.6) · deps T1.3
   - Done when: tests cover each rule, including "two relay outputs into one input = join" and "two NAND outputs into one input = short".
