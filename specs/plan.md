@@ -281,6 +281,9 @@ interface SaveV1 {
 - Storage key `zipzap.save`. Writes are debounced (500 ms) after every change.
 - On load: parse, then validate with Zod, then run the `migrations[version]` chain up to the current version. If the data is corrupt, keep a backup copy under `zipzap.save.corrupt.<ts>` and start fresh with a notice.
 - **Export** downloads `zipzap-save-YYYYMMDD.json`. **Import** uses the same validation and migration path and asks for confirmation before overwriting.
+- **Format changes always bump `version`.** The schema drops fields it doesn't know, so any change to the save, even a new optional field, gets a new version and a migration. An older build then reports a newer save as unreadable instead of silently discarding the new data.
+- **One tab saves at a time.** When another tab writes the save, a tab stops autosaving and offers to reload, so tabs can't overwrite each other's progress (or undo an import or reset).
+- **Saved circuits are cleaned on open.** Parts whose kind no longer exists, and wires to missing parts or pins, are dropped with a notice.
 
 ## 8. UI and screens
 
