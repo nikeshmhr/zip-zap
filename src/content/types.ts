@@ -44,6 +44,12 @@ export interface LevelDef {
   inputs: readonly string[];
   outputs: readonly string[];
   goal: Goal;
+  /**
+   * Order of the input switches and output lamps on the canvas, top to bottom, if it should
+   * differ from the truth-table order (e.g. interleaving A0, B0, A1, B1… for adders, so each
+   * bit's inputs sit together). Must list exactly the level's pins.
+   */
+  layout?: { inputs?: readonly string[]; outputs?: readonly string[] };
   /** Sequential levels with a clock. */
   clock?: ClockRules;
   toolbox: Toolbox;

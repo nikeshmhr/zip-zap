@@ -21,7 +21,7 @@ export const CH2: LevelDef[] = [
 Inside a computer, muxes are everywhere: whenever two values compete for one wire, a mux decides which one wins.`,
     hints: [
       'Split it into two cases: "A, and SEL is OFF" or "B, and SEL is ON".',
-      'AND each data input with SEL or with NOT SEL, then OR the two results.',
+      'Make one signal that is A only while SEL is OFF, and another that is B only while SEL is ON. Then combine them.',
     ],
     reference: (b) => {
       const pickA = and(b, 'A', not(b, 'SEL'));
@@ -109,10 +109,10 @@ This is how memory picks a location. The address goes into a decoder, and exactl
 
 This truth table has 64 rows, too many to read, so the goal is shown as a rule instead. Every row is still tested.
 
-You could design it from scratch, but you don't have to. Big circuits are built from small ones: a **tree** of the 2-way muxes you already have does the job.`,
+You could design it from scratch, but you don't have to. Big circuits are built from small ones. Which of your chips already chooses between two things?`,
     hints: [
       'S0 can choose within each pair of inputs, and S1 can choose between the pairs.',
-      'Use two Mux chips on S0 (one for D0/D1, one for D2/D3), then a third Mux on S1.',
+      'Let S0 choose within each pair (D0/D1 and D2/D3), then let S1 choose between the two winners.',
     ],
     reference: (b) => {
       const low = part(b, CHIP.mux, { A: 'D0', B: 'D1', SEL: 'S0' }).out('OUT');

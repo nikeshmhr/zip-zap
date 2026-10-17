@@ -12,6 +12,9 @@ const msbFirst = (prefix: string, width = 4) =>
 
 const BITS = [0, 1, 2, 3] as const;
 
+/** Canvas order for two 4-bit numbers: A0, B0, A1, B1… so each bit's inputs sit together. */
+const interleaved = BITS.flatMap((i) => [`A${i}`, `B${i}`]);
+
 export const CH3: LevelDef[] = [
   {
     id: '3.1',
@@ -34,7 +37,7 @@ Adding two one-digit binary numbers gives at most 2, which is \`10\` in binary:
 - 0 + 1 = \`01\`
 - 1 + 1 = \`10\`
 
-**SUM** is the ones digit and **CARRY** is the twos digit. Look closely at each column of the table: you've already built both.`,
+**SUM** is the ones digit and **CARRY** is the twos digit. Look closely at the SUM and CARRY columns. Have you seen those patterns before?`,
     hints: [
       'Compare the SUM column, and then the CARRY column, with gates you already have.',
       'SUM is XOR, and CARRY is AND.',
@@ -83,6 +86,7 @@ A circuit that does this is a **full adder**.`,
     summary: 'Add two 4-bit numbers A and B plus CIN. S is the 4-bit result and COUT the carry.',
     inputs: [...msbFirst('A'), ...msbFirst('B'), 'CIN'],
     outputs: [...msbFirst('S'), 'COUT'],
+    layout: { inputs: ['CIN', ...interleaved], outputs: [...BITS.map((i) => `S${i}`), 'COUT'] },
     goal: {
       kind: 'combinational',
       fn: (bits) => {
@@ -119,6 +123,7 @@ If the total is more than 15, it doesn't fit in 4 bits: COUT turns ON. The table
     summary: 'Output D = A − B as a 4-bit two’s complement number.',
     inputs: [...msbFirst('A'), ...msbFirst('B')],
     outputs: msbFirst('D'),
+    layout: { inputs: interleaved, outputs: BITS.map((i) => `D${i}`) },
     goal: {
       kind: 'combinational',
       fn: (bits) => writeBus('D', 4, readBus(bits, 'A', 4) - readBus(bits, 'B', 4)),
@@ -128,14 +133,12 @@ If the total is more than 15, it doesn't fit in 4 bits: COUT turns ON. The table
     unlocks: { kind: CHIP.sub4, name: '4-bit Subtractor' },
     concept: `Can you subtract without designing a new circuit? Yes, with **two's complement**.
 
-To make −B, invert every bit of B and add 1. So A − B = A + (NOT B) + 1.
+To make −B, invert every bit of B and add 1.
 
-Results wrap around within 4 bits, like a car's odometer: 3 − 5 gives \`1110\`. Read as **two's complement**, where bit 3 is worth −8 instead of 8, that's −8 + 4 + 2 = −2. Correct! Whenever the true answer is between −8 and 7, D shows it exactly.
-
-Your adder already has a spare input that can add the 1.`,
+Results wrap around within 4 bits, like a car's odometer: 3 − 5 gives \`1110\`. Read as **two's complement**, where bit 3 is worth −8 instead of 8, that's −8 + 4 + 2 = −2. Correct! Whenever the true answer is between −8 and 7, D shows it exactly.`,
     hints: [
       'Follow the recipe A + (NOT B) + 1 using chips you already own.',
-      'Invert each bit of B on its way into the adder, and connect CIN to Constant 1.',
+      "Your 4-bit adder's CIN input is a spare '+ 1'.",
     ],
     reference: (b) => {
       const one = part(b, 'const1').out('out');

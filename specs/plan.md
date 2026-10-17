@@ -223,6 +223,7 @@ interface LevelDef {
   inputs: string[];               // ordered pin names; also the truth-table column order
   outputs: string[];
   goal: Goal;
+  layout?: { inputs?: string[]; outputs?: string[] }; // canvas order, if not table order
   toolbox: { include: 'unlocked' | ComponentKind[]; exclude?: ComponentKind[] };
   unlocks?: { chipId: ChipId; displayName: string; symbol?: string };
   concept: string;                // markdown, ≤150 words (lint-checked)

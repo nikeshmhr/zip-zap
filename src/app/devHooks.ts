@@ -15,6 +15,6 @@ declare global {
 export function installDevHooks() {
   window.__zipzap = {
     loadLevelCircuit: (id, circuit) =>
-      levelEditor(id, catalogue.level(id)).getState().load(circuit),
+      levelEditor(id, catalogue.canvasIo(id)).getState().load(circuit),
   };
 }

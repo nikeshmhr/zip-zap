@@ -5,7 +5,7 @@
 import { buildCircuit } from '../engine/builder.ts';
 import type { ChipDef } from '../engine/chips.ts';
 import { createResolver } from '../engine/chips.ts';
-import type { Circuit, ComponentKind } from '../engine/model.ts';
+import type { Circuit, ComponentKind, LevelIo } from '../engine/model.ts';
 import { chipIdOf, isChipKind } from '../engine/model.ts';
 import type { ComponentResolver } from '../engine/primitives.ts';
 import { isPrimitiveKind } from '../engine/primitives.ts';
@@ -31,6 +31,8 @@ export interface Catalogue {
   referenceCircuit(id: LevelId): Circuit;
   /** Display name for a component kind (unlock name for chips and NAND). */
   displayName(kind: ComponentKind): string;
+  /** The level's pins in canvas order (its layout, or else truth-table order). */
+  canvasIo(id: LevelId): LevelIo;
 }
 
 const PRIMITIVE_NAMES: Partial<Record<ComponentKind, string>> = {
@@ -132,5 +134,12 @@ export function createCatalogue(
       return buildCircuit(def, def.reference, resolve);
     },
     displayName: (kind) => unlockNames.get(kind) ?? PRIMITIVE_NAMES[kind] ?? kind,
+    canvasIo: (id) => {
+      const def = level(id);
+      return {
+        inputs: def.layout?.inputs ?? def.inputs,
+        outputs: def.layout?.outputs ?? def.outputs,
+      };
+    },
   };
 }

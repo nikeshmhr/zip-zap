@@ -31,7 +31,7 @@ export function LevelScreen({ id }: { id: string }) {
 }
 
 function Level({ level }: { level: LevelDef }) {
-  const store = useMemo(() => levelEditor(level.id, level), [level]);
+  const store = useMemo(() => levelEditor(level.id, catalogue.canvasIo(level.id)), [level]);
   const options = useMemo(() => catalogue.validateOptions(level.id), [level.id]);
   const chapter = catalogue.chapters.find((c) => c.id === level.chapter);
   const progress = useProgress((s) => s.get(level.id));

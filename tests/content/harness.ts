@@ -116,6 +116,12 @@ export function contentSuite(name: string, catalogue: Catalogue) {
           expect(level.goal.kind === 'sequential' || !level.clock).toBe(true);
         });
 
+        it('lays out exactly its own pins on the canvas', () => {
+          const io = catalogue.canvasIo(level.id);
+          expect([...io.inputs].sort()).toEqual([...level.inputs].sort());
+          expect([...io.outputs].sort()).toEqual([...level.outputs].sort());
+        });
+
         it('shows large truth tables as a formula', () => {
           const goal = level.goal;
           if (goal.kind !== 'combinational' || level.inputs.length <= MAX_TABLE_INPUTS) return;
