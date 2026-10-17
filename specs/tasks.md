@@ -73,7 +73,7 @@
   Also add a **chip-consistency** test (the reference solution vs the behavioural chip).
   - Done when: the harness runs green over the stub levels.
 
-- [ ] **T2.3 Chapter 0: Switches** · 0.1–0.4 with reference solutions, concept cards, hints
+- [x] **T2.3 Chapter 0: Switches** · 0.1–0.4 with reference solutions, concept cards, hints
   - Done when: the content tests pass; the NAND chip is unlocked by 0.4; relays are excluded from Chapter 1 onward.
 - [ ] **T2.4 Chapter 1: Gates** · 1.1–1.6
   - Done when: the content and chip-consistency tests pass.
