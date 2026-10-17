@@ -260,3 +260,59 @@ describe('branchPoint', () => {
     expect(branchPoint(a, b)).toEqual({ at: { x: 0, y: 0 }, distance: 0 });
   });
 });
+
+describe('routeWires: keeping signals apart (playtest)', () => {
+  const right = { x: 1, y: 0 };
+  const left = { x: -1, y: 0 };
+
+  it('moves a wire whose corner would sit on another signal (a fake T-junction)', () => {
+    const routes = routeWires([
+      // w1 turns at x=14; w2's natural route would end its run exactly on w1's corner.
+      {
+        id: 'w1',
+        source: 'a',
+        target: 'x',
+        start: { x: 3, y: 1 },
+        startDir: right,
+        end: { x: 25, y: 5 },
+        endDir: left,
+      },
+      {
+        id: 'w2',
+        source: 'b',
+        target: 'y',
+        start: { x: 3, y: 5 },
+        startDir: right,
+        end: { x: 25, y: 7 },
+        endDir: left,
+      },
+    ]);
+    const w1 = routes.get('w1')!;
+    const w2 = routes.get('w2')!;
+    const touches = w2.some((p) => w1.some((q) => q.x === p.x && q.y === p.y));
+    expect(touches).toBe(false);
+  });
+
+  it('steers a wire around a part in its way when a lane allows', () => {
+    const part = { x: 8, y: -2, width: 4, height: 8 };
+    const route = routeWires(
+      [
+        {
+          id: 'w1',
+          source: 'a',
+          target: 'x',
+          start: { x: 0, y: 0 },
+          startDir: right,
+          end: { x: 20, y: 4 },
+          endDir: left,
+        },
+      ],
+      [part],
+    ).get('w1')!;
+    const crosses = route.slice(1).some((p, i) => {
+      const a = route[i]!;
+      return a.x === p.x && a.x > part.x && a.x < part.x + part.width;
+    });
+    expect(crosses).toBe(false);
+  });
+});

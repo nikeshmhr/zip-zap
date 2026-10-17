@@ -286,12 +286,16 @@ export function CircuitEditor(props: CircuitEditorProps) {
         },
       ];
     });
-    const routes = routeWires(requests);
+    const obstacles = circuit.components.flatMap((c) => {
+      const g = geomOf(c.kind);
+      return g ? [partRect(c, g)] : [];
+    });
+    const routes = routeWires(requests, obstacles);
     return circuit.wires.flatMap((wire) => {
       const points = routes.get(wire.id);
       return points ? [{ wire, points }] : [];
     });
-  }, [circuit.wires, pinAnchor]);
+  }, [circuit.wires, circuit.components, pinAnchor, geomOf]);
 
   // Junction dots where a signal visibly branches (fan-out) or joined relay outputs merge.
   const junctions = useMemo(() => {

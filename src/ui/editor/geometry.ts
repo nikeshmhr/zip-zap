@@ -207,7 +207,10 @@ export interface WireRequest {
   endDir: Point;
 }
 
-const LANES = [0, 1, -1, 2, -2, 3, -3];
+const LANES = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6];
+
+/** Penalties when choosing a lane: lower is better. */
+const PENALTY = { overlap: 100, touch: 60, throughPart: 25, distance: 1 };
 
 /** Whether two axis-aligned segments run along the same line with some shared length. */
 function segmentsOverlap(a0: Point, a1: Point, b0: Point, b1: Point): boolean {
@@ -231,32 +234,57 @@ function routesOverlap(a: readonly Point[], b: readonly Point[]): boolean {
   return false;
 }
 
+/** A corner or end of one route lying on the other: reads as a T-junction (a join). */
+const routesTouch = (a: readonly Point[], b: readonly Point[]) =>
+  a.some((p) => onPolyline(p, b)) || b.some((p) => onPolyline(p, a));
+
+/** Whether an axis-aligned segment passes through the inside of a rectangle. */
+function crossesRect(a: Point, b: Point, r: Rect): boolean {
+  const inset = 0.25;
+  const x0 = r.x + inset;
+  const x1 = r.x + r.width - inset;
+  const y0 = r.y + inset;
+  const y1 = r.y + r.height - inset;
+  if (a.y === b.y) {
+    return a.y > y0 && a.y < y1 && Math.max(a.x, b.x) > x0 && Math.min(a.x, b.x) < x1;
+  }
+  return a.x > x0 && a.x < x1 && Math.max(a.y, b.y) > y0 && Math.min(a.y, b.y) < y1;
+}
+
 /**
- * Routes several wires, moving each one to the first lane where it doesn't run along a wire
- * carrying a different signal (which would make two signals look joined).
+ * Routes several wires. Each wire tries a series of lanes and keeps the one that best avoids
+ * running along or touching wires of other signals (which would make them look joined) and
+ * passing through parts. Fan-out and joined-relay wires may share runs: they are connected.
  */
-export function routeWires(requests: readonly WireRequest[]): Map<string, Point[]> {
+export function routeWires(
+  requests: readonly WireRequest[],
+  obstacles: readonly Rect[] = [],
+): Map<string, Point[]> {
   const placed: { request: WireRequest; points: Point[] }[] = [];
   const routes = new Map<string, Point[]>();
   for (const request of requests) {
     const { start, startDir, end, endDir } = request;
-    let chosen: Point[] | null = null;
+    const others = placed.filter(
+      (o) => o.request.source !== request.source && o.request.target !== request.target,
+    );
+    let best: { points: Point[]; score: number } | null = null;
     for (const lane of LANES) {
       const points = routeWire(start, startDir, end, endDir, lane);
-      const clash = placed.some(
-        (other) =>
-          other.request.source !== request.source &&
-          other.request.target !== request.target &&
-          routesOverlap(points, other.points),
-      );
-      if (!clash) {
-        chosen = points;
-        break;
+      let score = Math.abs(lane) * PENALTY.distance;
+      for (const other of others) {
+        if (routesOverlap(points, other.points)) score += PENALTY.overlap;
+        else if (routesTouch(points, other.points)) score += PENALTY.touch;
       }
+      for (let i = 1; i < points.length; i++) {
+        if (obstacles.some((r) => crossesRect(points[i - 1]!, points[i]!, r))) {
+          score += PENALTY.throughPart;
+        }
+      }
+      if (!best || score < best.score) best = { points, score };
+      if (score === 0) break;
     }
-    chosen ??= routeWire(start, startDir, end, endDir);
-    placed.push({ request, points: chosen });
-    routes.set(request.id, chosen);
+    placed.push({ request, points: best!.points });
+    routes.set(request.id, best!.points);
   }
   return routes;
 }
