@@ -26,6 +26,7 @@ pnpm lint       # ESLint, including layer-boundary rules
 pnpm format     # Prettier
 pnpm test       # unit tests (Vitest)
 pnpm check      # typecheck + lint + format check + unit tests
+pnpm e2e        # browser tests (Playwright; first run: pnpm exec playwright install chromium)
 ```
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/).

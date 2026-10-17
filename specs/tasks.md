@@ -29,7 +29,7 @@
   - Done when: an engine file that imports React fails lint.
 - [x] **T0.4 Unit tests** · Vitest configured; one sample test; `pnpm check` = typecheck + lint + test
   - Done when: `pnpm check` passes.
-- [ ] **T0.5 E2E tests** · Playwright configured against the dev server; smoke test loads the placeholder
+- [x] **T0.5 E2E tests** · Playwright configured against the dev server; smoke test loads the placeholder
   - Done when: `pnpm e2e` passes.
 
 ## M1: Engine (headless)
