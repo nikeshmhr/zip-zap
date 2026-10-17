@@ -53,3 +53,29 @@ test('runs the tests and marks failing rows', async ({ page }) => {
   await page.locator('[data-tool="const1"]').click();
   await expect(summary).toContainText('changed since this run');
 });
+
+test('a shorted circuit blocks the run, explains why and marks the wires', async ({ page }) => {
+  await page.goto('/#/level/1.1');
+  await page.waitForFunction(() => !!window.__zipzap);
+  await page.evaluate(() => {
+    const at = (x: number, y: number) => ({ x, y });
+    window.__zipzap!.loadLevelCircuit('1.1', {
+      components: [
+        { id: 'in:A', kind: 'in', label: 'A', pos: at(0, 0), rot: 0 },
+        { id: 'out:OUT', kind: 'out', label: 'OUT', pos: at(40, 0), rot: 0 },
+        { id: 'p1', kind: 'nand', pos: at(12, -4), rot: 0 },
+        { id: 'p2', kind: 'nand', pos: at(12, 4), rot: 0 },
+      ],
+      wires: [
+        { id: 'w1', from: { comp: 'p1', pin: 'out' }, to: { comp: 'out:OUT', pin: 'in' } },
+        { id: 'w2', from: { comp: 'p2', pin: 'out' }, to: { comp: 'out:OUT', pin: 'in' } },
+      ],
+    });
+  });
+  await expect(page.getByRole('alert')).toContainText('Short circuit');
+  await expect(page.locator('[data-wire="w1"]')).toHaveAttribute('data-flagged');
+  await page.getByRole('button', { name: 'Run tests' }).click();
+  const summary = page.getByRole('region', { name: 'Tests' }).getByRole('status');
+  await expect(summary).toContainText("there's a short circuit");
+  await expect(summary).toContainText('Only relay outputs can be joined');
+});
