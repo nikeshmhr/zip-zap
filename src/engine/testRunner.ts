@@ -80,7 +80,10 @@ export function runTests(
   spec: TestSpec,
   options?: ValidateOptions,
 ): TestReport {
-  const compiled = compile(circuit, resolve, options);
+  const compiled = compile(circuit, resolve, {
+    ...options,
+    io: { inputs: spec.inputs, outputs: spec.outputs },
+  });
   if (!compiled.ok) {
     const { issues } = compiled.validation;
     const error = issues.every((i) => i.severity === 'short') ? 'short' : 'invalid';

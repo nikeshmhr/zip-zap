@@ -57,6 +57,12 @@ export interface Wire {
   bends?: Point[];
 }
 
+/** A level's pins: input switch names and output lamp names. */
+export interface LevelIo {
+  inputs: readonly string[];
+  outputs: readonly string[];
+}
+
 export interface Circuit {
   components: ComponentInstance[];
   wires: Wire[];

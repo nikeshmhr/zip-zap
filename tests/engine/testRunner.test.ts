@@ -75,6 +75,13 @@ describe('runTests: combinational', () => {
     expect(report.issues.map((i) => i.code)).toEqual(['short']);
   });
 
+  it("refuses circuits whose IO doesn't match the level", () => {
+    const circuit = buildCircuit({ inputs: ['A'], outputs: ['OUT'] }, (b) => b.wire('A', 'OUT'));
+    const report = runTests(circuit, primitiveResolver, xorSpec);
+    expect(report).toMatchObject({ passed: false, error: 'invalid', cases: [] });
+    expect(report.issues.map((i) => i.code)).toEqual(['io-mismatch']);
+  });
+
   it('refuses invalid circuits, honouring validation options', () => {
     const circuit = buildCircuit(xorSpec, (b) => b.wire(xor(b, 'A', 'B'), 'OUT'));
     const report = runTests(circuit, primitiveResolver, xorSpec, {

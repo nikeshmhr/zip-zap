@@ -1,7 +1,7 @@
 /**
  * Structural checks run before compiling a circuit (plan §4.6, spec §5).
  */
-import type { Circuit, ComponentKind, Wire } from './model.ts';
+import type { Circuit, ComponentKind, LevelIo, Wire } from './model.ts';
 import { isIoKind } from './model.ts';
 import type { Net } from './nets.ts';
 import { groupNets, pinKey } from './nets.ts';
@@ -9,6 +9,8 @@ import type { ComponentDef, ComponentResolver } from './primitives.ts';
 
 export type IssueCode =
   | 'duplicate-id'
+  | 'duplicate-label'
+  | 'io-mismatch'
   | 'unknown-kind'
   | 'not-in-toolbox'
   | 'dangling'
@@ -37,6 +39,8 @@ export interface ValidateOptions {
   allowedKinds?: ReadonlySet<ComponentKind>;
   /** If set, level inputs may only be wired to these pins (e.g. relay coils in level 0.1). */
   inputsOnlyDrive?: readonly PinTarget[];
+  /** If set, the circuit's IO components must match these pin names exactly. */
+  io?: LevelIo;
 }
 
 export interface Validation {
@@ -80,6 +84,37 @@ export function validate(
       });
     }
     defs.set(c.id, def);
+  }
+
+  // Level IO: each pin name once, and (if given) exactly the level's pins.
+  for (const kind of ['in', 'out'] as const) {
+    const byLabel = new Map<string, string[]>();
+    for (const c of circuit.components) {
+      if (c.kind !== kind) continue;
+      const label = c.label ?? c.id;
+      byLabel.set(label, [...(byLabel.get(label) ?? []), c.id]);
+    }
+    for (const [label, ids] of byLabel) {
+      if (ids.length > 1) {
+        invalid('duplicate-label', `Two level ${kind}puts are both named "${label}"`, {
+          components: ids,
+        });
+      }
+    }
+    if (options.io) {
+      const expected = kind === 'in' ? options.io.inputs : options.io.outputs;
+      const missing = expected.filter((name) => !byLabel.has(name));
+      const extra = [...byLabel.keys()].filter((name) => !expected.includes(name));
+      if (missing.length > 0 || extra.length > 0) {
+        const parts = [
+          missing.length > 0 ? `missing ${missing.join(', ')}` : '',
+          extra.length > 0 ? `unexpected ${extra.join(', ')}` : '',
+        ].filter(Boolean);
+        invalid('io-mismatch', `Level ${kind}puts don't match the level: ${parts.join('; ')}`, {
+          components: extra.flatMap((name) => byLabel.get(name) ?? []),
+        });
+      }
+    }
   }
 
   // Wires.

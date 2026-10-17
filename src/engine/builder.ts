@@ -11,14 +11,11 @@
  * A string endpoint names a level pin: as a source it is an input switch, as a target an
  * output lamp. Components are laid out automatically in columns by signal depth.
  */
-import type { Circuit, ComponentInstance, ComponentKind, PinRef, Wire } from './model.ts';
+import type { Circuit, ComponentInstance, ComponentKind, LevelIo, PinRef, Wire } from './model.ts';
 import { ioId } from './model.ts';
 import type { ComponentResolver } from './primitives.ts';
 
-export interface LevelIo {
-  inputs: readonly string[];
-  outputs: readonly string[];
-}
+export type { LevelIo };
 
 export interface PartHandle {
   id: string;

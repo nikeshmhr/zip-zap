@@ -121,6 +121,33 @@ describe('validate: invalid circuits', () => {
     expect(codes(validate(c, primitiveResolver))).toEqual(['duplicate-id']);
   });
 
+  it('rejects two level pins with the same name', () => {
+    const c = buildCircuit(io, () => {});
+    c.components.push({ id: 'in:A2', kind: 'in', label: 'A', pos: { x: 0, y: 0 }, rot: 0 });
+    c.components.push({ id: 'out:X1', kind: 'out', label: 'OUT', pos: { x: 0, y: 0 }, rot: 0 });
+    const v = validate(c, primitiveResolver);
+    expect(v.issues.map((i) => [i.code, i.components])).toEqual([
+      ['duplicate-label', ['in:A', 'in:A2']],
+      ['duplicate-label', ['out:OUT', 'out:X1']],
+    ]);
+  });
+
+  it('checks IO against the level when asked', () => {
+    const c = buildCircuit({ inputs: ['A', 'Z'], outputs: [] }, () => {});
+    const v = validate(c, primitiveResolver, { io });
+    expect(v.issues.map((i) => i.message)).toEqual([
+      "Level inputs don't match the level: missing B; unexpected Z",
+      "Level outputs don't match the level: missing OUT",
+    ]);
+    expect(
+      validate(
+        buildCircuit(io, () => {}),
+        primitiveResolver,
+        { io },
+      ).ok,
+    ).toBe(true);
+  });
+
   it('rejects unknown component kinds', () => {
     expect(codes(check((b) => void b.add('chip:nope')))).toEqual(['unknown-kind']);
   });
