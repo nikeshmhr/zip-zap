@@ -144,16 +144,44 @@ describe('Simulator: feedback and stability', () => {
     expect(step({ R: 1 })).toBe(0); // reset
   });
 
-  it('reset powers everything off and clears latched state', () => {
+  it('reset re-runs power-on: latched state is forgotten, then the circuit settles', () => {
     const sim = nandLatch();
-    sim.setInputs({ nS: 0, nR: 1 });
-    sim.settle();
+    // Power-on with both (active-low) inputs OFF = both asserted: Q settles to 1.
+    expect(sim.isStable).toBe(true);
     expect(sim.readOutputs().Q).toBe(1);
-    sim.reset();
-    expect(sim.readOutputs().Q).toBe(0);
     sim.setInputs({ nS: 1, nR: 0 });
     sim.settle();
     expect(sim.readOutputs().Q).toBe(0);
+    sim.reset();
+    expect(sim.readOutputs().Q).toBe(1);
+  });
+
+  it('power-on resolves a symmetric latch instead of oscillating', () => {
+    // NOR latch with both inputs OFF: under purely synchronous updates it would oscillate.
+    const sim = simulate({ inputs: ['S', 'R'], outputs: ['Q', 'Qn'] }, (b) => {
+      const q = b.add('nand');
+      const qn = b.add('nand');
+      // Cross-coupled NANDs fed by inverted inputs: hold state when S = R = 0.
+      b.wire(not(b, 'S'), q.in('a'));
+      b.wire(qn.out('out'), q.in('b'));
+      b.wire(not(b, 'R'), qn.in('a'));
+      b.wire(q.out('out'), qn.in('b'));
+      b.wire(q.out('out'), 'Q');
+      b.wire(qn.out('out'), 'Qn');
+    });
+    expect(sim.isStable).toBe(true);
+    const { Q, Qn } = sim.readOutputs();
+    expect(Q).not.toBe(Qn);
+  });
+
+  it('power-on leaves a true oscillator pending so settle reports it', () => {
+    const sim = simulate({ inputs: [], outputs: [] }, (b) => {
+      const g = b.add('nand');
+      b.wire(g.out('out'), g.in('a'));
+      b.wire(g.out('out'), g.in('b'));
+    });
+    expect(sim.isStable).toBe(false);
+    expect(sim.settle().stable).toBe(false);
   });
 
   it('tick() advances one step at a time for animation', () => {

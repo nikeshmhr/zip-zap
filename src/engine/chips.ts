@@ -14,6 +14,9 @@ export type CombFn = (inputs: Bits) => Bits;
 /**
  * A state machine evaluated whenever any input changes. Also used as the reference model
  * that produces expected outputs in sequential level tests.
+ *
+ * `step` must be idempotent for unchanged inputs (re-evaluating with the same inputs leaves
+ * state and outputs unchanged), since power-on may evaluate a component several times.
  */
 export interface SeqModel<S = unknown> {
   init(): S;

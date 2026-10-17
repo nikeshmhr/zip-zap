@@ -147,7 +147,7 @@ Concept cards introduce feedback (4.1), the clock (4.3) and addressing (4.6).
 ### 7.2 Sequential levels (Chapter 4)
 
 - The goal is shown as a **step table**. Each step sets inputs (including CLK) and lists the expected outputs after the circuit stabilises.
-- Tests run from a defined reset state. Each sequence begins with a forcing step, and data inputs never change in the same step as a rising clock edge (§15.7). Failure shows the first failing step, and the player can scrub through the steps to inspect the circuit at each one.
+- Tests run from a power-on reset. Each sequence begins with forcing steps, and data inputs never change in the same step as a rising clock edge (§15.7). Failure shows the first failing step, and the player can scrub through the steps to inspect the circuit at each one.
 - A **timing view** (a waveform showing each pin over the steps) **should** be available for these levels.
 
 ### 7.3 Solved state
@@ -242,5 +242,5 @@ Resolved questions, kept here for reference.
 4. **Tablets:** touch input is best-effort for the MVP.
 5. **Delay metric:** reported only for combinational levels (Chapters 0–3), because it isn't meaningful for circuits with feedback.
 6. **Chip timing:** a chip used in a later level takes 1 tick to respond, whatever its internal depth. Its logic is exact; its internal timing is abstracted.
-7. **Sequential tests** start with a forcing step that puts the circuit in a known state, and never change data inputs in the same step as a rising clock edge (the game's version of setup/hold time).
+7. **Sequential tests** start from power-on: the circuit settles with all inputs OFF, and any latch left in a symmetric state resolves to an arbitrary but definite value, as in real hardware. Each sequence then begins with forcing steps (plus, where needed, warm-up steps that only check stability) to reach a known state, and never changes data inputs in the same step as a rising clock edge (the game's version of setup/hold time).
 8. **Joining relay outputs:** done by wiring a second relay output into an input that already has a relay-driven wire. A junction dot appears. This is the only case where an input accepts more than one wire.

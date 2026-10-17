@@ -20,7 +20,11 @@ export interface CombinationalGoal {
 export interface Step {
   /** Inputs to change; others keep their previous value (all start OFF). */
   set: Partial<Bits>;
-  /** Explicit expected outputs. Omit to use the reference model's outputs. */
+  /**
+   * Explicit expected outputs. Omit to use the reference model's outputs. `{}` makes a warm-up
+   * step that only checks the circuit is stable, e.g. clocking a known value into a flip-flop
+   * whose power-on state is arbitrary.
+   */
   expect?: Partial<Bits>;
 }
 
@@ -29,8 +33,9 @@ export interface SequentialGoal {
   /** Reference model: produces expected outputs, evaluated once per step with every input. */
   model: SeqModel;
   /**
-   * Each sequence runs from a reset. Sequences start with a forcing step, and data inputs never
-   * change in the same step as a rising clock edge (spec §15.7).
+   * Each sequence runs from a power-on reset. Sequences start with forcing (and if needed
+   * warm-up) steps that put the circuit in a known state, and data inputs never change in the
+   * same step as a rising clock edge (spec §15.7).
    */
   sequences: readonly (readonly Step[])[];
 }

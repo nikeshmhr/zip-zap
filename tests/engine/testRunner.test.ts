@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { buildCircuit } from '../../src/engine/builder.ts';
 import type { CircuitBuilder } from '../../src/engine/builder.ts';
 import type { SeqModel } from '../../src/engine/chips.ts';
-import type { Bit } from '../../src/engine/model.ts';
-import { toBit } from '../../src/engine/model.ts';
+import { createResolver } from '../../src/engine/chips.ts';
+import type { Bit, PinRef } from '../../src/engine/model.ts';
+import { chipKind, toBit } from '../../src/engine/model.ts';
 import { primitiveResolver } from '../../src/engine/primitives.ts';
 import type { TestSpec } from '../../src/engine/testRunner.ts';
 import { runTests } from '../../src/engine/testRunner.ts';
@@ -170,5 +171,89 @@ describe('runTests: sequential', () => {
     const report = run(spec, dLatch); // X is never driven, but isn't checked
     expect(report.passed).toBe(true);
     expect(report.cases[0]!.expected).toEqual({ Q: 1 });
+  });
+});
+
+describe('runTests: sequential regressions (engine review)', () => {
+  /** Ideal rising-edge D flip-flop. */
+  const dffModel: SeqModel<{ q: Bit; prevClk: Bit }> = {
+    init: () => ({ q: 0, prevClk: 0 }),
+    step: ({ D = 0, CLK = 0 }, { q, prevClk }) => {
+      const next = !prevClk && CLK ? D : q;
+      return { outputs: { Q: next }, state: { q: next, prevClk: CLK } };
+    },
+  };
+
+  /** Gated D latch from NANDs; returns Q. */
+  const dLatch = (b: CircuitBuilder, d: PinRef | string, en: PinRef | string) => {
+    const nS = nand(b, d, en);
+    const nR = nand(b, not(b, d), en);
+    const q = b.add('nand');
+    const qn = b.add('nand');
+    b.wire(nS, q.in('a'));
+    b.wire(qn.out('out'), q.in('b'));
+    b.wire(nR, qn.in('a'));
+    b.wire(q.out('out'), qn.in('b'));
+    return q.out('out');
+  };
+
+  it('a master–slave DFF from NANDs passes after a warm-up clock pulse', () => {
+    const spec: TestSpec = {
+      inputs: ['D', 'CLK'],
+      outputs: ['Q'],
+      goal: {
+        kind: 'sequential',
+        model: dffModel,
+        sequences: [
+          [
+            { set: { D: 0, CLK: 0 }, expect: {} }, // warm-up: power-on state is arbitrary
+            { set: { CLK: 1 } }, // forcing: clock in a known 0
+            { set: { CLK: 0, D: 1 } },
+            { set: { CLK: 1 } }, // capture 1
+            { set: { D: 0 } }, // clock high: ignored
+            { set: { CLK: 0 } },
+            { set: { CLK: 1 } }, // capture 0
+          ],
+        ],
+      },
+    };
+    const report = run(spec, (b) => {
+      const master = dLatch(b, 'D', not(b, 'CLK'));
+      b.wire(dLatch(b, master, 'CLK'), 'Q');
+    });
+    expect(report.cases.map((c) => c.status)).toEqual(Array(7).fill('pass'));
+  });
+
+  it('settles at power-on so inverted clock logic causes no spurious first edge', () => {
+    const r = createResolver([
+      {
+        id: 'dff',
+        name: 'DFF',
+        inputs: ['d', 'clk'],
+        outputs: ['q'],
+        behavior: {
+          kind: 'sequential',
+          model: {
+            init: () => ({ q: 0, prevClk: 0 }),
+            step: ({ d = 0, clk = 0 }, s: { q: Bit; prevClk: Bit }) => {
+              const q = !s.prevClk && clk ? d : s.q;
+              return { outputs: { q }, state: { q, prevClk: clk } };
+            },
+          } as SeqModel,
+        },
+      },
+    ]);
+    const spec: TestSpec = {
+      inputs: ['D', 'CLK'],
+      outputs: ['Q'],
+      goal: { kind: 'sequential', model: dffModel, sequences: [[{ set: { D: 1, CLK: 0 } }]] },
+    };
+    const circuit = buildCircuit(spec, (b) => {
+      const ff = b.add(chipKind('dff'));
+      b.wire('D', ff.in('d'));
+      b.wire(not(b, not(b, 'CLK')), ff.in('clk'));
+      b.wire(ff.out('q'), 'Q');
+    });
+    expect(runTests(circuit, r, spec).cases[0]).toMatchObject({ actual: { Q: 0 }, status: 'pass' });
   });
 });

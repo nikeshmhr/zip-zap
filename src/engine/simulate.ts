@@ -35,19 +35,65 @@ export class Simulator {
   }
 
   /**
-   * Powers everything off: all nets and outputs OFF, component state re-initialised, and every
-   * component scheduled for evaluation. Nothing is evaluated until the next tick, so inputs
-   * set straight after a reset apply from the very first tick.
+   * Powers the circuit on from scratch: component state re-initialised, all inputs OFF, then a
+   * power-on settle so the next inputs apply to a settled circuit (no start-up glitches).
+   *
+   * Power-on evaluates components one at a time in a fixed order rather than all at once, so a
+   * symmetric latch settles into a definite (if arbitrary) state instead of oscillating, much as
+   * real hardware resolves metastability. Circuits that still don't settle (e.g. a ring
+   * oscillator) are left pending, so the next `settle` reports them unstable.
    */
   reset(): void {
     this.netValues.fill(0);
     this.dirtyList = [];
+    this.dirtyFlags.fill(0);
     this.netlist.components.forEach((c, i) => {
       this.outValues[i]!.fill(0);
       this.states[i] = c.def.init();
+    });
+    this.powerOn();
+  }
+
+  private powerOn(): void {
+    const { components } = this.netlist;
+    const maxPasses = defaultMaxTicks(this.netlist);
+    for (let pass = 0; pass < maxPasses; pass++) {
+      let changed = false;
+      for (let i = 0; i < components.length; i++) {
+        for (const net of this.evaluate(i)) {
+          const value = this.driveValue(net);
+          if (this.netValues[net] !== value) {
+            this.netValues[net] = value;
+            changed = true;
+          }
+        }
+      }
+      if (!changed && pass > 0) return;
+    }
+    // Didn't settle: leave every component pending.
+    for (let i = 0; i < components.length; i++) {
       this.dirtyFlags[i] = 1;
       this.dirtyList.push(i);
+    }
+  }
+
+  /**
+   * Evaluates one component against the current nets, updating its state and outputs.
+   * Returns the nets whose drivers changed.
+   */
+  private evaluate(i: number): number[] {
+    const comp = this.netlist.components[i]!;
+    const inputs = Array.from(comp.inputNets, (net) => this.netValues[net] as Bit);
+    const result = comp.def.step(inputs, this.states[i]);
+    this.states[i] = result.state;
+    const current = this.outValues[i]!;
+    const touched: number[] = [];
+    result.outputs.forEach((value, k) => {
+      if (current[k] === value) return;
+      current[k] = value;
+      touched.push(comp.outputNets[k]!);
     });
+    return touched;
   }
 
   /** Sets level inputs by pin name. Unknown names throw, to catch typos in tests and levels. */
@@ -73,7 +119,7 @@ export class Simulator {
     this.dirtyList = [];
     for (const i of evaluate) this.dirtyFlags[i] = 0;
 
-    // Compute phase: read current nets, collect output changes.
+    // Compute phase: every component reads the nets as they were at the start of the tick.
     const { components } = this.netlist;
     const changes: number[] = [];
     for (const i of evaluate) {
