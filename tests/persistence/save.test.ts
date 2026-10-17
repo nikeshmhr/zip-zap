@@ -83,6 +83,28 @@ describe('damaged saves', () => {
     expect(storage.getItem(`${SAVE_KEY}.corrupt.1234`)).toBe('{ not json');
   });
 
+  it('sets a damaged save aside only once', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(SAVE_KEY, '{ not json');
+    loadSave(storage, 1);
+    loadSave(storage, 2);
+    expect(storage.keys().filter((k) => k.includes('.corrupt.'))).toEqual([
+      `${SAVE_KEY}.corrupt.1`,
+    ]);
+    expect(JSON.parse(storage.getItem(SAVE_KEY)!)).toEqual(emptySave());
+  });
+
+  it('never throws on a damaged save when storage is full', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(SAVE_KEY, '{ not json');
+    storage.setItem = () => {
+      throw new Error('QuotaExceededError');
+    };
+    const loaded = loadSave(storage, 3);
+    expect(loaded.save).toEqual(emptySave());
+    expect(loaded.notice?.message).toMatch(/couldn't be backed up/);
+  });
+
   it('quarantines saves that fail validation', () => {
     const storage = new MemoryStorage();
     const broken = { ...emptySave(), progress: { '0.1': { solved: 'yes' } } };

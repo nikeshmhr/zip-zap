@@ -116,7 +116,8 @@ export interface Loaded {
 
 /**
  * Loads the save. An unreadable one is copied to `zipzap.save.corrupt.<time>` (never
- * deleted) and the game starts fresh.
+ * deleted), replaced by a fresh save so it's only set aside once, and the game starts fresh.
+ * Never throws, even if storage is full.
  */
 export function loadSave(storage: Storage, now = Date.now()): Loaded {
   const raw = storage.getItem(SAVE_KEY);
@@ -129,8 +130,18 @@ export function loadSave(storage: Storage, now = Date.now()): Loaded {
   }
   if (result.ok) return { save: result.save };
   const backupKey = `${SAVE_KEY}.corrupt.${now}`;
-  storage.setItem(backupKey, raw);
-  return { save: emptySave(), notice: { message: result.message, backupKey } };
+  const fresh = emptySave();
+  try {
+    storage.setItem(backupKey, raw);
+    storage.setItem(SAVE_KEY, JSON.stringify(fresh));
+  } catch {
+    // Storage is full or blocked: leave the damaged save where it is and carry on.
+    return {
+      save: fresh,
+      notice: { message: `${result.message} It couldn't be backed up.`, backupKey: SAVE_KEY },
+    };
+  }
+  return { save: fresh, notice: { message: result.message, backupKey } };
 }
 
 /** Writes the save. Returns false if the browser refused (e.g. storage full or disabled). */
