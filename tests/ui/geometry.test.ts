@@ -164,7 +164,8 @@ describe('findFreeSpot', () => {
     const r = { x: 0, y: 0, width: 4, height: 4 };
     expect(findFreeSpot(r, [])).toEqual({ x: 0, y: 0 });
     const spot = findFreeSpot(r, [{ x: 0, y: 0, width: 4, height: 4 }]);
-    expect(rectsIntersect({ ...r, ...spot }, { x: -1, y: -1, width: 6, height: 6 })).toBe(false);
+    // Clear of the other part by the placement gap on every side.
+    expect(rectsIntersect({ ...r, ...spot }, { x: -3, y: -2, width: 10, height: 8 })).toBe(false);
   });
 });
 
