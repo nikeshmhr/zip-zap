@@ -5,7 +5,9 @@
 import { create } from 'zustand';
 import type { Metrics } from '../engine/metrics.ts';
 import type { Circuit, LevelIo } from '../engine/model.ts';
-import { startCircuit } from './editing.ts';
+import { catalogue } from '../content/index.ts';
+import { sanitizeCircuit, startCircuit } from './editing.ts';
+import { useSaveNotice } from './notice.ts';
 import type { EditorStore } from './editorStore.ts';
 import { createEditorStore } from './editorStore.ts';
 
@@ -41,7 +43,16 @@ export function matchesIo(circuit: Circuit, io: LevelIo): boolean {
 export function levelEditor(id: string, io: LevelIo, fixedIo = true): EditorStore {
   let store = editors.get(id);
   if (!store) {
-    const saved = savedCircuits[id];
+    let saved = savedCircuits[id];
+    if (saved) {
+      const clean = sanitizeCircuit(saved, catalogue.resolve);
+      if (clean.removed > 0) {
+        useSaveNotice.setState({
+          message: `Some parts in your saved circuit no longer exist and were removed (${clean.removed} parts and wires).`,
+        });
+      }
+      saved = clean.circuit;
+    }
     const initial = saved && (!fixedIo || matchesIo(saved, io)) ? saved : startCircuit(io);
     store = createEditorStore(initial, {}, { fixedIo });
     editors.set(id, store);

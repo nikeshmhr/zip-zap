@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Circuit } from '../../src/engine/model.ts';
+import { primitiveResolver } from '../../src/engine/primitives.ts';
 import {
   addComponent,
+  sanitizeCircuit,
   deleteItems,
   duplicateComponents,
   isEditable,
@@ -107,5 +109,31 @@ describe('editing operations', () => {
     expect(isEditable(c, 'p1')).toBe(true);
     expect(isEditable(c, 'in:A')).toBe(false);
     expect(isEditable(c, 'ghost')).toBe(false);
+  });
+});
+
+describe('sanitizeCircuit', () => {
+  it('drops unknown parts and wires to missing parts or pins', () => {
+    const base = nandCircuit();
+    const c: Circuit = {
+      components: [
+        ...base.components,
+        { id: 'p9', kind: 'chip:removed', pos: { x: 0, y: 0 }, rot: 0 },
+      ],
+      wires: [
+        ...base.wires,
+        { id: 'w8', from: { comp: 'p9', pin: 'OUT' }, to: { comp: 'p1', pin: 'a' } },
+        { id: 'w9', from: { comp: 'p1', pin: 'renamed' }, to: { comp: 'out:OUT', pin: 'in' } },
+      ],
+    };
+    const { circuit, removed } = sanitizeCircuit(c, primitiveResolver);
+    expect(removed).toBe(3);
+    expect(circuit.components.map((x) => x.id)).not.toContain('p9');
+    expect(circuit.wires.map((w) => w.id)).toEqual(['w1', 'w2', 'w3']);
+  });
+
+  it('returns a clean circuit unchanged', () => {
+    const c = nandCircuit();
+    expect(sanitizeCircuit(c, primitiveResolver)).toEqual({ circuit: c, removed: 0 });
   });
 });

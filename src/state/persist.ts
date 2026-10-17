@@ -2,25 +2,15 @@
  * Connects game state to the save (plan §7): load and hydrate at start-up, then write a
  * debounced snapshot whenever progress, settings or any circuit changes.
  */
-import { create } from 'zustand';
 import type { Save } from '../persistence/save.ts';
 import { CURRENT_VERSION, SAVE_KEY, loadSave, writeSave } from '../persistence/save.ts';
 import { allCircuits, onCircuitChange, seedCircuits, useProgress } from './session.ts';
+import { useSaveNotice } from './notice.ts';
 import { useSettings } from './settings.ts';
 
+export { useSaveNotice } from './notice.ts';
+
 export const AUTOSAVE_DELAY_MS = 500;
-
-export interface SaveNotice {
-  /** A message for the player about their save (e.g. it was damaged and set aside). */
-  message?: string;
-  /** An optional button, e.g. "Reload". */
-  action?: { label: string; run(): void };
-  dismiss(): void;
-}
-
-export const useSaveNotice = create<SaveNotice>()((set) => ({
-  dismiss: () => set({ message: undefined, action: undefined }),
-}));
 
 export function hydrate(save: Save) {
   seedCircuits(save.circuits);

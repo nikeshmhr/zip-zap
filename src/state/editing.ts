@@ -200,3 +200,25 @@ export function nextIoLabel(circuit: Circuit, kind: 'in' | 'out'): string {
   if (!taken.has('OUT')) return 'OUT';
   for (let i = 2; ; i++) if (!taken.has(`OUT${i}`)) return `OUT${i}`;
 }
+
+/**
+ * Drops parts whose kind no longer exists and wires to missing parts or pins (e.g. a save from
+ * before a content change). Returns the circuit unchanged if nothing was dropped.
+ */
+export function sanitizeCircuit(
+  circuit: Circuit,
+  resolve: (
+    kind: ComponentKind,
+  ) => { inputs: readonly string[]; outputs: readonly string[] } | undefined,
+): { circuit: Circuit; removed: number } {
+  const defs = new Map(circuit.components.map((c) => [c.id, resolve(c.kind)]));
+  const components = circuit.components.filter((c) => defs.get(c.id));
+  const wires = circuit.wires.filter((w) => {
+    const from = defs.get(w.from.comp);
+    const to = defs.get(w.to.comp);
+    return !!from?.outputs.includes(w.from.pin) && !!to?.inputs.includes(w.to.pin);
+  });
+  const removed =
+    circuit.components.length - components.length + (circuit.wires.length - wires.length);
+  return removed === 0 ? { circuit, removed } : { circuit: { components, wires }, removed };
+}
