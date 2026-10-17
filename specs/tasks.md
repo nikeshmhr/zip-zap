@@ -102,7 +102,7 @@
   - Done when: a visual check page renders every component kind.
 - [x] **T3.5 Interaction state machine** · idle / dragging / wiring / box-select / panning; place from toolbox, move with snapping, multi-select, delete
   - Done when: the state machine has unit tests, and manual use feels smooth.
-- [ ] **T3.6 Wiring** · drag pin → pin, direction rules, one wire per input, relay junction join with a dot, orthogonal routing, select/delete wire · deps T1.4
+- [x] **T3.6 Wiring** · drag pin → pin, direction rules, one wire per input, relay junction join with a dot, orthogonal routing, select/delete wire · deps T1.4
   - Done when: invalid connections are refused with a visible cue, and a relay join shows a junction dot.
 - [ ] **T3.7 Live simulation** · recompile on change, toggle inputs, ON = thick solid glow / OFF = thin dashed, flow animation (off under reduced motion), oscillating badge, short highlighting · deps T1.6
   - Done when: toggling inputs on a NAND circuit updates the wires live; a ring oscillator shows the badge without freezing.

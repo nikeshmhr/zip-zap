@@ -9,6 +9,8 @@ import {
   pinWorld,
   rectsIntersect,
   rotatedSize,
+  routeWire,
+  simplify,
 } from '../../src/ui/editor/geometry.ts';
 
 const at = (rot: Rotation): ComponentInstance => ({
@@ -92,5 +94,64 @@ describe('rectsIntersect', () => {
     const a = { x: 0, y: 0, width: 4, height: 4 };
     expect(rectsIntersect(a, { x: 3, y: 3, width: 2, height: 2 })).toBe(true);
     expect(rectsIntersect(a, { x: 4, y: 0, width: 2, height: 2 })).toBe(false);
+  });
+});
+
+describe('routeWire', () => {
+  const right = { x: 1, y: 0 };
+  const left = { x: -1, y: 0 };
+  const orthogonal = (pts: { x: number; y: number }[]) =>
+    pts.slice(1).every((p, i) => p.x === pts[i]!.x || p.y === pts[i]!.y);
+
+  it('runs a straight line between aligned pins', () => {
+    expect(routeWire({ x: 0, y: 2 }, right, { x: 10, y: 2 }, left)).toEqual([
+      { x: 0, y: 2 },
+      { x: 10, y: 2 },
+    ]);
+  });
+
+  it('turns once in the middle for offset pins', () => {
+    const route = routeWire({ x: 0, y: 0 }, right, { x: 10, y: 4 }, left);
+    expect(route).toEqual([
+      { x: 0, y: 0 },
+      { x: 5, y: 0 },
+      { x: 5, y: 4 },
+      { x: 10, y: 4 },
+    ]);
+  });
+
+  it('loops around when the target is behind the source', () => {
+    const route = routeWire({ x: 10, y: 0 }, right, { x: 0, y: 0 }, left);
+    expect(orthogonal(route)).toBe(true);
+    expect(route[0]).toEqual({ x: 10, y: 0 });
+    expect(route.at(-1)).toEqual({ x: 0, y: 0 });
+    expect(Math.max(...route.map((p) => p.y))).toBe(3);
+  });
+
+  it('stays orthogonal for rotated pins and the cursor', () => {
+    expect(
+      orthogonal(routeWire({ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 7, y: 9 }, { x: 0, y: -1 })),
+    ).toBe(true);
+    expect(orthogonal(routeWire({ x: 0, y: 0 }, right, { x: 3.3, y: 7.1 }, { x: 0, y: 0 }))).toBe(
+      true,
+    );
+  });
+});
+
+describe('simplify', () => {
+  it('removes duplicates and collinear midpoints', () => {
+    expect(
+      simplify([
+        { x: 0, y: 0 },
+        { x: 0, y: 0 },
+        { x: 2, y: 0 },
+        { x: 4, y: 0 },
+        { x: 4, y: 3 },
+      ]),
+    ).toEqual([
+      { x: 0, y: 0 },
+      { x: 4, y: 0 },
+      { x: 4, y: 3 },
+    ]);
   });
 });

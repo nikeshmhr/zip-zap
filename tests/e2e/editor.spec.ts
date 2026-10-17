@@ -55,3 +55,40 @@ test('level IO cannot be dragged', async ({ page }) => {
   await page.mouse.up();
   expect(await input.getAttribute('transform')).toBe(before);
 });
+
+/** Drags a wire between two pins, given as `part|pin|dir`. */
+async function drawWire(page: Page, from: string, to: string) {
+  const a = await centre(page, `[data-pin="${from}"]`);
+  const b = await centre(page, `[data-pin="${to}"]`);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move((a.x + b.x) / 2, (a.y + b.y) / 2, { steps: 4 });
+  await page.mouse.move(b.x, b.y, { steps: 4 });
+  await page.mouse.up();
+}
+
+test('draws wires between pins and refuses a second wire into an input', async ({ page }) => {
+  await drawWire(page, 'in:A|out|out', 'p1|a|in');
+  await drawWire(page, 'p1|out|out', 'out:OUT|in|in');
+  await expect(page.locator('[data-wire]')).toHaveCount(2);
+
+  await drawWire(page, 'p2|OUT|out', 'out:OUT|in|in');
+  await expect(page.locator('[data-wire]')).toHaveCount(2);
+  await expect(page.getByRole('status')).toContainText('already has a wire');
+});
+
+test('wires can be drawn backwards, from an input to an output', async ({ page }) => {
+  await drawWire(page, 'p1|b|in', 'in:B|out|out');
+  await expect(page.locator('[data-wire]')).toHaveCount(1);
+});
+
+test('selects a wire and deletes it with the Delete key', async ({ page }) => {
+  await drawWire(page, 'in:A|out|out', 'p1|a|in');
+  const wire = page.locator('[data-wire="w1"]');
+  // Click the middle of the wire's path.
+  const box = (await wire.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(wire).toHaveAttribute('data-selected');
+  await page.keyboard.press('Delete');
+  await expect(page.locator('[data-wire]')).toHaveCount(0);
+});

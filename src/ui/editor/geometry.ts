@@ -145,3 +145,57 @@ export function createGeometryLookup(
     return geom;
   };
 }
+
+export const findPin = (geom: PartGeom, name: string, dir: 'in' | 'out') =>
+  geom.pins.find((p) => p.name === name && p.dir === dir);
+
+/** Length of the straight lead a wire runs out of each pin before turning. */
+const STUB = 1;
+
+/**
+ * An orthogonal route from an output pin to an input pin. `startDir`/`endDir` point away from
+ * their parts; an end with no direction (the cursor while wiring) is approached directly.
+ */
+export function routeWire(start: Point, startDir: Point, end: Point, endDir: Point): Point[] {
+  const s1 = { x: start.x + startDir.x * STUB, y: start.y + startDir.y * STUB };
+  const e1 = { x: end.x + endDir.x * STUB, y: end.y + endDir.y * STUB };
+  let middle: Point[];
+  if (s1.x <= e1.x) {
+    const midX = (s1.x + e1.x) / 2;
+    middle = [
+      { x: midX, y: s1.y },
+      { x: midX, y: e1.y },
+    ];
+  } else {
+    // The target is behind the source: loop around above or below.
+    const midY = Math.abs(s1.y - e1.y) >= 2 ? (s1.y + e1.y) / 2 : Math.max(start.y, end.y) + 3;
+    middle = [
+      { x: s1.x, y: midY },
+      { x: e1.x, y: midY },
+    ];
+  }
+  return simplify([start, s1, ...middle, e1, end]);
+}
+
+/** Drops repeated points and points in the middle of straight runs. */
+export function simplify(points: Point[]): Point[] {
+  const out: Point[] = [];
+  for (const p of points) {
+    const last = out.at(-1);
+    if (last && last.x === p.x && last.y === p.y) continue;
+    const prev = out.at(-2);
+    if (
+      prev &&
+      last &&
+      ((prev.x === last.x && last.x === p.x) || (prev.y === last.y && last.y === p.y))
+    ) {
+      out[out.length - 1] = p;
+      continue;
+    }
+    out.push(p);
+  }
+  return out;
+}
+
+export const polylinePath = (points: readonly Point[]) =>
+  points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`).join(' ');

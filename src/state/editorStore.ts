@@ -14,6 +14,8 @@ import {
   moveComponents,
   rotateComponents,
 } from './editing.ts';
+import type { ConnectResult, PinEnd, WiringContext } from './wiring.ts';
+import { connect } from './wiring.ts';
 
 export const HISTORY_LIMIT = 200;
 
@@ -48,6 +50,8 @@ export interface EditorActions {
   redo(): void;
 
   addPart(kind: ComponentKind, pos: Point): string;
+  /** Wires two pins if the wiring rules allow it. */
+  connect(a: PinEnd, b: PinEnd, ctx: WiringContext): ConnectResult;
   moveSelection(delta: Point): void;
   rotateSelection(): void;
   duplicateSelection(): void;
@@ -143,6 +147,12 @@ export function createEditorStore(initial: Circuit, inputs: Bits = {}) {
       });
       set({ selection: { components: [id], wires: [] } });
       return id;
+    },
+
+    connect: (a, b, ctx) => {
+      const result = connect(get().circuit, a, b, ctx);
+      if (result.ok) get().commit(() => result.circuit);
+      return result;
     },
 
     moveSelection: (delta) =>

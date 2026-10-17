@@ -5,3 +5,39 @@
   stroke-dasharray: 0.3 0.2;
   pointer-events: none;
 }
+
+/* While wiring, highlight the pins the wire can end on. */
+.parts[data-wiring='in'] [data-pin$='|in'],
+.parts[data-wiring='out'] [data-pin$='|out'] {
+  stroke: var(--selection);
+  stroke-width: 0.14;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  max-width: min(520px, calc(100% - 32px));
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 14px;
+  box-shadow: var(--shadow);
+  animation: toast-in 160ms ease-out;
+  pointer-events: none;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
