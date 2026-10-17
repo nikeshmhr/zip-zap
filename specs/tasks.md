@@ -94,7 +94,7 @@
 
 - [x] **T3.1 App shell** · hash router (`#/map`, `#/level/:id`, `#/sandbox`, `#/settings`), CSS-variable theming (light/dark/system), screen placeholders
   - Done when: navigating between routes works and the theme follows the OS setting.
-- [ ] **T3.2 Editor store** · Zustand + Immer: circuit, selection, history (cap 200, one entry per gesture) (plan §6)
+- [x] **T3.2 Editor store** · Zustand + Immer: circuit, selection, history (cap 200, one entry per gesture) (plan §6)
   - Done when: store tests cover add/move/delete/wire plus undo/redo.
 - [ ] **T3.3 Canvas** · SVG viewBox pan/zoom, dot grid, world ↔ screen coordinate utilities
   - Done when: the coordinate utilities are unit-tested; wheel-zoom keeps the point under the cursor fixed.

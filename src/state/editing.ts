@@ -1,0 +1,165 @@
+/**
+ * Pure editing operations on circuits. The editor store wraps these with history.
+ * Level IO components are fixed: they can't be moved, rotated, duplicated or deleted.
+ */
+import { produce } from 'immer';
+import type {
+  Circuit,
+  ComponentInstance,
+  ComponentKind,
+  LevelIo,
+  Point,
+  Rotation,
+} from '../engine/model.ts';
+import { ioId, isIoKind } from '../engine/model.ts';
+
+/** Grid distance between the input and output columns of a fresh level. */
+export const STAGE_WIDTH = 40;
+/** Vertical grid distance between neighbouring level pins. */
+export const IO_PITCH = 4;
+
+/** A level's starting circuit: input switches on the left, output lamps on the right. */
+export function startCircuit(io: LevelIo): Circuit {
+  const rows = Math.max(io.inputs.length, io.outputs.length);
+  const column = (labels: readonly string[], kind: 'in' | 'out', x: number) => {
+    const top = ((rows - labels.length) * IO_PITCH) / 2;
+    return labels.map((label, i): ComponentInstance => ({
+      id: ioId(kind, label),
+      kind,
+      label,
+      pos: { x, y: top + i * IO_PITCH },
+      rot: 0,
+    }));
+  };
+  return {
+    components: [...column(io.inputs, 'in', 0), ...column(io.outputs, 'out', STAGE_WIDTH)],
+    wires: [],
+  };
+}
+
+/** The next free id with this prefix, e.g. `p7` after `p1…p6`. */
+export function nextId(ids: Iterable<string>, prefix: string): string {
+  let max = 0;
+  const pattern = new RegExp(`^${prefix}(\\d+)$`);
+  for (const id of ids) {
+    const match = pattern.exec(id);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return `${prefix}${max + 1}`;
+}
+
+const isFixed = (c: ComponentInstance) => isIoKind(c.kind);
+
+export function addComponent(
+  circuit: Circuit,
+  kind: ComponentKind,
+  pos: Point,
+): { circuit: Circuit; id: string } {
+  const id = nextId(
+    circuit.components.map((c) => c.id),
+    'p',
+  );
+  const next = produce(circuit, (draft) => {
+    draft.components.push({
+      id,
+      kind,
+      pos: { x: Math.round(pos.x), y: Math.round(pos.y) },
+      rot: 0,
+    });
+  });
+  return { circuit: next, id };
+}
+
+/** Moves the given parts by a whole number of grid units. Fixed IO stays put. */
+export function moveComponents(circuit: Circuit, ids: readonly string[], delta: Point): Circuit {
+  const dx = Math.round(delta.x);
+  const dy = Math.round(delta.y);
+  if (dx === 0 && dy === 0) return circuit;
+  const move = new Set(ids);
+  return produce(circuit, (draft) => {
+    for (const c of draft.components) {
+      if (move.has(c.id) && !isFixed(c)) {
+        c.pos.x += dx;
+        c.pos.y += dy;
+      }
+    }
+  });
+}
+
+/** Rotates the given parts a quarter turn clockwise. */
+export function rotateComponents(circuit: Circuit, ids: readonly string[]): Circuit {
+  const turn = new Set(ids);
+  if (!circuit.components.some((c) => turn.has(c.id) && !isFixed(c))) return circuit;
+  return produce(circuit, (draft) => {
+    for (const c of draft.components) {
+      if (turn.has(c.id) && !isFixed(c)) c.rot = ((c.rot + 90) % 360) as Rotation;
+    }
+  });
+}
+
+/** Deletes parts (with their wires) and wires. Fixed IO is never deleted. */
+export function deleteItems(
+  circuit: Circuit,
+  componentIds: readonly string[],
+  wireIds: readonly string[],
+): Circuit {
+  const doomed = new Set(
+    circuit.components.filter((c) => componentIds.includes(c.id) && !isFixed(c)).map((c) => c.id),
+  );
+  const doomedWires = new Set(wireIds);
+  const wires = circuit.wires.filter(
+    (w) => !doomedWires.has(w.id) && !doomed.has(w.from.comp) && !doomed.has(w.to.comp),
+  );
+  if (doomed.size === 0 && wires.length === circuit.wires.length) return circuit;
+  return {
+    components: circuit.components.filter((c) => !doomed.has(c.id)),
+    wires,
+  };
+}
+
+/**
+ * Copies parts, plus the wires running between copied parts, offset by `offset`.
+ * Returns the ids of the copies.
+ */
+export function duplicateComponents(
+  circuit: Circuit,
+  ids: readonly string[],
+  offset: Point = { x: 2, y: 2 },
+): { circuit: Circuit; ids: string[] } {
+  const sources = circuit.components.filter((c) => ids.includes(c.id) && !isFixed(c));
+  if (sources.length === 0) return { circuit, ids: [] };
+
+  const idMap = new Map<string, string>();
+  const allIds = circuit.components.map((c) => c.id);
+  for (const c of sources) {
+    const id = nextId(allIds, 'p');
+    allIds.push(id);
+    idMap.set(c.id, id);
+  }
+  const wireIds = circuit.wires.map((w) => w.id);
+
+  const next = produce(circuit, (draft) => {
+    for (const c of sources) {
+      draft.components.push({
+        ...c,
+        id: idMap.get(c.id)!,
+        pos: { x: c.pos.x + offset.x, y: c.pos.y + offset.y },
+      });
+    }
+    for (const w of circuit.wires) {
+      const from = idMap.get(w.from.comp);
+      const to = idMap.get(w.to.comp);
+      if (!from || !to) continue;
+      const id = nextId(wireIds, 'w');
+      wireIds.push(id);
+      draft.wires.push({ id, from: { ...w.from, comp: from }, to: { ...w.to, comp: to } });
+    }
+  });
+  return { circuit: next, ids: [...idMap.values()] };
+}
+
+/** Whether a component may be moved, rotated, duplicated or deleted. */
+export const isEditable = (circuit: Circuit, id: string) => {
+  const c = circuit.components.find((x) => x.id === id);
+  return !!c && !isFixed(c);
+};
