@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "size": "pnpm build && node scripts/check-bundle-size.mjs"
   },
   "dependencies": {
     "immer": "^11.1.21",
