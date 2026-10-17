@@ -63,7 +63,7 @@
 
 - [x] **T2.1 Level schema and registry** · `LevelDef`, ordered level list, chip catalogue built from levels, toolbox resolution (`'unlocked'` + include/exclude), unlock graph (plan §5.1)
   - Done when: registry tests resolve the toolbox correctly for a stub 3-level set.
-- [ ] **T2.2 Content test harness** · generic tests that run over **every** registered level (plan §9):
+- [x] **T2.2 Content test harness** · generic tests that run over **every** registered level (plan §9):
   - (a) the reference solution passes;
   - (b) the empty circuit fails;
   - (c) the reference uses only the toolbox;
