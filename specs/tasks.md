@@ -56,7 +56,7 @@
   - Done when: a correct XOR passes, a wrong one reports the exact failing rows, and a shorted circuit returns `error: 'short'`.
 - [x] **T1.9 Test runner: sequential** · step sequences, reset per sequence, expected values from the reference model (plan §4.5)
   - Done when: a correct D latch passes; a "latch" missing its feedback wire fails at the first hold step.
-- [ ] **T1.10 Metrics** · relay/NAND count through nested chips; delay as the longest DAG path; skip delay for cyclic circuits; memoisation (plan §4.7)
+- [x] **T1.10 Metrics** · relay/NAND count through nested chips; delay as the longest DAG path; skip delay for cyclic circuits; memoisation (plan §4.7)
   - Done when: hand-computed counts and delays match for NOT, XOR, Full Adder (built from chips) and an SR latch (count only).
 
 ## M2: Content (headless)
