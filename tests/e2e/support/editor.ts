@@ -20,3 +20,9 @@ export async function drawWire(page: Page, from: string, to: string) {
 
 /** Adds a part from the toolbox by clicking it. */
 export const addPart = (page: Page, kind: string) => page.locator(`[data-tool="${kind}"]`).click();
+
+/** Opens a level and dismisses the concept card shown on a first visit. */
+export async function openLevel(page: Page, id: string) {
+  await page.goto(`/#/level/${id}`);
+  await page.getByRole('button', { name: "Let's build" }).click();
+}

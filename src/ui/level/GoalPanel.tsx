@@ -10,6 +10,7 @@ import { enumerateRows, toBit } from '../../engine/model.ts';
 import type { TestReport } from '../../engine/testRunner.ts';
 import { runTests } from '../../engine/testRunner.ts';
 import type { EditorStore } from '../../state/editorStore.ts';
+import { Hints } from './Hints.tsx';
 import { TruthTable } from './TruthTable.tsx';
 import styles from './GoalPanel.module.css';
 
@@ -85,6 +86,7 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
           <RunSummary report={run.report} stale={stale} sequential={goal.kind === 'sequential'} />
         )}
       </section>
+      <Hints level={level} />
     </>
   );
 }

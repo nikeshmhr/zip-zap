@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
-import { addPart, drawWire } from './support/editor.ts';
+import { addPart, drawWire, openLevel } from './support/editor.ts';
 
 const tableRows = (page: Page) =>
   page.getByRole('region', { name: 'Truth table' }).locator('tbody tr');
@@ -8,7 +8,7 @@ const tableRows = (page: Page) =>
 test('shows a small truth table in full, and clicking a row sets the switches', async ({
   page,
 }) => {
-  await page.goto('/#/level/1.5');
+  await openLevel(page, '1.5');
   await expect(page.getByRole('heading', { name: '1.5 XOR' })).toBeVisible();
   await expect(tableRows(page)).toHaveCount(4);
   await tableRows(page).nth(2).click(); // A=1, B=0
@@ -20,7 +20,7 @@ test('shows a small truth table in full, and clicking a row sets the switches', 
 test('shows large goals as a formula with sample rows and a "show all" option', async ({
   page,
 }) => {
-  await page.goto('/#/level/3.3');
+  await openLevel(page, '3.3');
   await expect(page.getByText('S + 16 × COUT = A + B + CIN')).toBeVisible();
   await expect(tableRows(page)).toHaveCount(8);
   // Bits are grouped into binary numbers.
@@ -36,7 +36,7 @@ test('shows large goals as a formula with sample rows and a "show all" option', 
 });
 
 test('runs the tests and marks failing rows', async ({ page }) => {
-  await page.goto('/#/level/1.5');
+  await openLevel(page, '1.5');
   await addPart(page, 'nand'); // NAND is not XOR: row 00 fails
   await drawWire(page, 'in:A|out|out', 'p1|a|in');
   await drawWire(page, 'in:B|out|out', 'p1|b|in');
@@ -55,7 +55,7 @@ test('runs the tests and marks failing rows', async ({ page }) => {
 });
 
 test('a shorted circuit blocks the run, explains why and marks the wires', async ({ page }) => {
-  await page.goto('/#/level/1.1');
+  await openLevel(page, '1.1');
   await page.waitForFunction(() => !!window.__zipzap);
   await page.evaluate(() => {
     const at = (x: number, y: number) => ({ x, y });
@@ -81,7 +81,7 @@ test('a shorted circuit blocks the run, explains why and marks the wires', async
 });
 
 test('solving 0.4 shows metrics, unlocks NAND and leads on to 1.1', async ({ page }) => {
-  await page.goto('/#/level/0.4');
+  await openLevel(page, '0.4');
   const canvas = page.getByRole('application');
   const drop = (kind: string, x: number, y: number) =>
     page.locator(`[data-tool="${kind}"]`).dragTo(canvas, { targetPosition: { x, y } });
@@ -105,4 +105,32 @@ test('solving 0.4 shows metrics, unlocks NAND and leads on to 1.1', async ({ pag
   await expect(page).toHaveURL(/#\/level\/1\.1$/);
   await expect(page.locator('[data-tool="nand"]')).toBeVisible();
   await expect(page.locator('[data-tool="relayNC"]')).toHaveCount(0);
+});
+
+test('shows the concept card on the first visit only, and on request', async ({ page }) => {
+  await page.goto('/#/level/1.3');
+  const card = page.getByRole('dialog', { name: 'About OR' });
+  await expect(card).toContainText('De Morgan');
+  await card.getByRole('button', { name: "Let's build" }).click();
+  await expect(card).toBeHidden();
+
+  // Same session: navigating away and back doesn't reopen it.
+  await page.goto('/#/level/1.4');
+  await page.getByRole('button', { name: "Let's build" }).click();
+  await page.goto('/#/level/1.3');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'About this level' }).click();
+  await expect(card).toBeVisible();
+});
+
+test('reveals hints one at a time', async ({ page }) => {
+  await openLevel(page, '1.3');
+  const hints = page.getByRole('region', { name: 'Hints' });
+  await hints.getByRole('button', { name: 'Need a hint?' }).click();
+  await expect(hints).toContainText('Hint 1');
+  await expect(hints).not.toContainText('Hint 2');
+  await hints.getByRole('button', { name: 'Show a stronger hint' }).click();
+  await expect(hints).toContainText('Hint 2');
+  await expect(hints.getByRole('button')).toHaveCount(0);
 });

@@ -8,6 +8,7 @@ import { routeHref } from '../../app/router.ts';
 import { levelEditor, useProgress } from '../../state/session.ts';
 import { CircuitEditor } from '../editor/CircuitEditor.tsx';
 import { Placeholder } from '../screens/Placeholder.tsx';
+import { ConceptCard } from './ConceptCard.tsx';
 import { GoalPanel } from './GoalPanel.tsx';
 import { formatCount, solveMetrics } from './solve.ts';
 import type { SolveResult } from './SolveDialog.tsx';
@@ -34,6 +35,14 @@ function Level({ level }: { level: LevelDef }) {
   const chapter = catalogue.chapters.find((c) => c.id === level.chapter);
   const progress = useProgress((s) => s.get(level.id));
   const [solved, setSolved] = useState<SolveResult | null>(null);
+  // The concept card opens by itself on a level's first visit.
+  const [conceptOpen, setConceptOpen] = useState(
+    () => !useProgress.getState().get(level.id).conceptSeen,
+  );
+  const closeConcept = () => {
+    setConceptOpen(false);
+    useProgress.getState().markConceptSeen(level.id);
+  };
   const unit = level.chapter === 0 ? 'relay' : 'NAND';
 
   return (
@@ -51,6 +60,9 @@ function Level({ level }: { level: LevelDef }) {
           </h1>
         </div>
         <div className={styles.actions}>
+          <button type="button" className={styles.action} onClick={() => setConceptOpen(true)}>
+            About this level
+          </button>
           {progress.solved && progress.best && (
             <span className={styles.badge} title="Your best solution">
               ✓ Solved · best {formatCount(progress.best.count, unit)}
@@ -84,6 +96,7 @@ function Level({ level }: { level: LevelDef }) {
         </aside>
       </div>
       <SolveDialog level={level} result={solved} onClose={() => setSolved(null)} />
+      <ConceptCard level={level} open={conceptOpen} onClose={closeConcept} />
     </div>
   );
 }
