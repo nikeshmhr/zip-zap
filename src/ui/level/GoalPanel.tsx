@@ -75,7 +75,11 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
 
   const showStep = (ref: StepRef) => {
     const steps = plan[ref.sequence]?.slice(0, ref.step + 1).map((s) => s.inputs) ?? [];
-    store.getState().replaySteps(steps);
+    const label =
+      plan.length > 1
+        ? `Sequence ${ref.sequence + 1}, step ${ref.step + 1}`
+        : `Step ${ref.step + 1}`;
+    store.getState().replaySteps(steps, label);
     setShown({ ref, inputs: store.getState().inputs, circuit: store.getState().circuit });
   };
 

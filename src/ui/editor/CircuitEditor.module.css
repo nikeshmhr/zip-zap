@@ -67,3 +67,29 @@
   height: 100%;
   min-height: 0;
 }
+
+.scrub {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid var(--selection);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transform: translateX(-50%);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.scrub button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+}

@@ -407,13 +407,13 @@ export function CircuitEditor(props: CircuitEditorProps) {
       x: Math.round(centre.x - geom.width / 2),
       y: Math.round(centre.y - geom.height / 2),
     };
-    if (avoid) {
-      const taken = store.getState().circuit.components.flatMap((c) => {
-        const g = geomOf(c.kind);
-        return g ? [partRect(c, g)] : [];
-      });
-      pos = findFreeSpot({ ...pos, width: geom.width, height: geom.height }, taken);
-    }
+    const taken = store.getState().circuit.components.flatMap((c) => {
+      const g = geomOf(c.kind);
+      return g ? [partRect(c, g)] : [];
+    });
+    const rect = { ...pos, width: geom.width, height: geom.height };
+    // Clicked parts keep a margin; dropped ones stay put unless they'd land on another part.
+    if (avoid || taken.some((t) => rectsIntersect(t, rect))) pos = findFreeSpot(rect, taken);
     store.getState().addPart(kind, pos);
   };
 
@@ -455,6 +455,16 @@ export function CircuitEditor(props: CircuitEditorProps) {
         overlay={
           <>
             <StatusBadge snapshot={snapshot} />
+            {replay?.label && replay.inputs === inputs && replay.circuit === circuit && (
+              <div className={styles.scrub} role="status">
+                <span>
+                  Showing <strong>{replay.label}</strong>, as the test saw it
+                </span>
+                <button type="button" onClick={() => store.setState({ inputs: { ...inputs } })}>
+                  Back to live
+                </button>
+              </div>
+            )}
             <TickControls
               on={tick.mode}
               ticks={snapshot.ticking?.ticks ?? 0}

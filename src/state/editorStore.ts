@@ -41,7 +41,15 @@ export interface EditorState {
    * A request to replay the live circuit from power-on through these input states (scrubbing
    * a memory level's steps). The token changes with every request.
    */
-  replay: { token: number; steps: readonly Bits[] } | null;
+  replay: {
+    token: number;
+    steps: readonly Bits[];
+    /** Shown on the canvas while it displays this replay, e.g. "Step 9". */
+    label?: string;
+    /** The switch positions and circuit the replay left; any change means it's no longer shown. */
+    inputs: Bits;
+    circuit: Circuit;
+  } | null;
   /** Tick-by-tick mode: the circuit advances one tick per request instead of settling. */
   tick: { mode: boolean; token: number };
 }
@@ -74,7 +82,7 @@ export interface EditorActions {
   select(selection: Selection): void;
   setInput(name: string, value: Bit): void;
   /** Powers the live circuit on and plays these input states in order (see `replay`). */
-  replaySteps(steps: readonly Bits[]): void;
+  replaySteps(steps: readonly Bits[], label?: string): void;
   setTickMode(on: boolean): void;
   /** Advances the circuit one tick (tick-by-tick mode only). */
   nextTick(): void;
@@ -223,11 +231,19 @@ export function createEditorStore(
       if (tick.mode) set({ tick: { mode: true, token: tick.token + 1 } });
     },
 
-    replaySteps: (steps) =>
+    replaySteps: (steps, label) => {
+      const inputs = { ...(steps.at(-1) ?? {}) };
       set({
-        inputs: { ...(steps.at(-1) ?? {}) },
-        replay: { token: (get().replay?.token ?? 0) + 1, steps },
-      }),
+        inputs,
+        replay: {
+          token: (get().replay?.token ?? 0) + 1,
+          steps,
+          label,
+          inputs,
+          circuit: get().circuit,
+        },
+      });
+    },
 
     toggleInput: (name) => {
       const { inputs } = get();

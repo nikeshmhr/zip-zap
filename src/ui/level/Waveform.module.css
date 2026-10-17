@@ -1,6 +1,51 @@
+.waveform {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.keyExpected,
+.keyActual {
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top: 2px dashed var(--text-muted);
+}
+
+.keyActual {
+  border-top: 2px solid var(--wire-on);
+}
+
 .scroll {
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+.scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scroll::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: var(--border);
+}
+
+.cursor {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--selection);
+  text-anchor: middle;
 }
 
 .wave {

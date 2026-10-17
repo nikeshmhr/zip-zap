@@ -1,7 +1,7 @@
 .bar {
   position: absolute;
-  top: 12px;
-  left: 50%;
+  bottom: 16px;
+  left: 16px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -10,7 +10,6 @@
   border-radius: 10px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  transform: translateX(-50%);
   font-size: 13px;
 }
 

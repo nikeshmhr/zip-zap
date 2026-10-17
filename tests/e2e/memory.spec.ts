@@ -83,3 +83,13 @@ test('long step tables keep the summary and the first failure in view', async ({
   await expect(summary).toBeInViewport();
   await expect(steps(page).nth(13)).toBeInViewport();
 });
+
+test('the canvas says which step it shows, and returns to live on request', async ({ page }) => {
+  await openLevel(page, '4.2');
+  await steps(page).nth(4).click();
+  const banner = page.getByRole('status').filter({ hasText: 'Showing' });
+  await expect(banner).toContainText('Showing Step 5, as the test saw it');
+  await banner.getByRole('button', { name: 'Back to live' }).click();
+  await expect(banner).toHaveCount(0);
+  await expect(page.locator('tr[data-live]')).toHaveCount(0);
+});
