@@ -1,0 +1,22 @@
+/** Shared helpers for driving the circuit editor in e2e tests. */
+import type { Page } from '@playwright/test';
+
+export async function centre(page: Page, selector: string) {
+  const box = await page.locator(selector).boundingBox();
+  if (!box) throw new Error(`${selector} not visible`);
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** Drags a wire between two pins, given as `part|pin|dir`. */
+export async function drawWire(page: Page, from: string, to: string) {
+  const a = await centre(page, `[data-pin="${from}"]`);
+  const b = await centre(page, `[data-pin="${to}"]`);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move((a.x + b.x) / 2, (a.y + b.y) / 2, { steps: 4 });
+  await page.mouse.move(b.x, b.y, { steps: 4 });
+  await page.mouse.up();
+}
+
+/** Adds a part from the toolbox by clicking it. */
+export const addPart = (page: Page, kind: string) => page.locator(`[data-tool="${kind}"]`).click();

@@ -117,7 +117,7 @@
   - Done when: `#/level/1.3` shows the OR level with its IO pins placed.
 - [x] **T4.2 Goal panel: truth table** · full table, or formula + sample rows for large levels
   - Done when: 1.5 shows 4 rows; 3.3 shows the formula with samples and a "show all" option.
-- [ ] **T4.3 Run tests and results** · results mapped onto the table rows; clicking a failing row sets those inputs on the canvas
+- [x] **T4.3 Run tests and results** · results mapped onto the table rows; clicking a failing row sets those inputs on the canvas
   - Done when: a wrong XOR highlights exactly the failing rows, and clicking one reproduces it live.
 - [ ] **T4.4 Blocked-run feedback** · short/invalid circuits block the run with a clear message and highlight the offending wires
   - Done when: an attempted run with two NAND outputs joined shows the short message and highlight.

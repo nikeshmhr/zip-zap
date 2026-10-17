@@ -24,3 +24,73 @@
   color: var(--text-muted);
   font-size: 14px;
 }
+
+.run {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.run:hover {
+  filter: brightness(1.08);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.result span {
+  color: var(--text-muted);
+}
+
+.result ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.result[data-state='pass'] {
+  border-color: var(--success);
+}
+
+.result[data-state='pass'] strong {
+  color: var(--success);
+}
+
+.result[data-state='fail'] strong,
+.result[data-state='blocked'] strong {
+  color: var(--danger);
+}
+
+.result[data-state='blocked'] {
+  border-color: var(--danger);
+}
+
+.result[data-state='stale'] {
+  opacity: 0.7;
+}
+
+.meter {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.meter > div {
+  height: 100%;
+  background: var(--success);
+}
+
+.result[data-state='fail'] .meter > div {
+  background: var(--accent);
+}
