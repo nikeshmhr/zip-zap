@@ -52,7 +52,7 @@
     - a NOR SR latch settles after a forcing step and then holds its state.
 - [x] **T1.7 Behavioural chips** · `ChipDef`; adapters for combinational (truth function) and sequential (state machine) chips (plan §4.2)
   - Done when: a behavioural DFF updates only on the rising CLK edge, and a combinational chip has a 1-tick delay.
-- [ ] **T1.8 Test runner: combinational** · enumerate 2ⁿ rows; results with pass/fail/unstable; short/invalid short-circuit the run (plan §4.5)
+- [x] **T1.8 Test runner: combinational** · enumerate 2ⁿ rows; results with pass/fail/unstable; short/invalid short-circuit the run (plan §4.5)
   - Done when: a correct XOR passes, a wrong one reports the exact failing rows, and a shorted circuit returns `error: 'short'`.
 - [ ] **T1.9 Test runner: sequential** · step sequences, reset per sequence, expected values from the reference model (plan §4.5)
   - Done when: a correct D latch passes; a "latch" missing its feedback wire fails at the first hold step.
