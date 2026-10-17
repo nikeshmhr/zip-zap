@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { catalogue } from '../../src/content/index.ts';
 import { computeMetrics } from '../../src/engine/metrics.ts';
+import { readBus, writeBus } from '../../src/engine/model.ts';
 import { contentSuite } from './harness.ts';
 
 contentSuite('Zip Zap', catalogue);
@@ -57,5 +58,32 @@ describe('chapter 2: routing', () => {
       expect(Object.values(out).filter((v) => v === 1)).toHaveLength(1);
       expect(out[`Y${A1 * 2 + A0}`]).toBe(1);
     }
+  });
+});
+
+describe('chapter 3: arithmetic', () => {
+  it('tests every row of the 4-bit adder and subtractor', () => {
+    expect(catalogue.testSpec('3.3').inputs).toHaveLength(9); // 512 rows
+    expect(catalogue.testSpec('3.4').inputs).toHaveLength(8); // 256 rows
+  });
+
+  it("computes two's complement wrap-around (3 − 5 = 1110)", () => {
+    const { goal } = catalogue.level('3.4');
+    if (goal.kind !== 'combinational') throw new Error('subtractor must be combinational');
+    const out = goal.fn({ ...writeBus('A', 4, 3), ...writeBus('B', 4, 5) });
+    expect(readBus(out, 'D', 4)).toBe(0b1110);
+  });
+
+  it('builds the subtractor reference from the 4-bit adder with CIN = 1', () => {
+    const circuit = catalogue.referenceCircuit('3.4');
+    const adder = circuit.components.find((c) => c.kind === 'chip:adder4');
+    const one = circuit.components.find((c) => c.kind === 'const1');
+    expect(adder).toBeDefined();
+    expect(circuit.wires).toContainEqual(
+      expect.objectContaining({
+        from: { comp: one!.id, pin: 'out' },
+        to: { comp: adder!.id, pin: 'CIN' },
+      }),
+    );
   });
 });

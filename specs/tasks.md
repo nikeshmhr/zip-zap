@@ -79,7 +79,7 @@
   - Done when: the content and chip-consistency tests pass.
 - [x] **T2.5 Chapter 2: Routing** · 2.1–2.4
   - Done when: the content and chip-consistency tests pass.
-- [ ] **T2.6 Chapter 3: Arithmetic** · 3.1–3.4, formula display for 3.3/3.4
+- [x] **T2.6 Chapter 3: Arithmetic** · 3.1–3.4, formula display for 3.3/3.4
   - Done when: the content and chip-consistency tests pass; the subtractor reference uses Adder4 with C_in = 1.
 - [ ] **T2.7 Chapter 4: Memory** · 4.1–4.6 with step sequences
   - Done when: the content and chip-consistency tests pass for all six, including Tiny RAM.
