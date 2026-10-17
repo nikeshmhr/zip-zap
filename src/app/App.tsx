@@ -1,8 +1,33 @@
+import { AppShell } from '../ui/shell/AppShell.tsx';
+import { Placeholder } from '../ui/screens/Placeholder.tsx';
+import { routeHref, useRoute } from './router.ts';
+
 export function App() {
+  const route = useRoute();
   return (
-    <main className="placeholder">
-      <h1>Zip Zap</h1>
-      <p>Build a computer from relays up, one chip at a time.</p>
-    </main>
+    <AppShell route={route}>
+      {route.name === 'map' && (
+        <Placeholder title="Zip Zap">
+          <p>Build a computer from relays up, one chip at a time.</p>
+          <p>The level map arrives in milestone M5.</p>
+        </Placeholder>
+      )}
+      {route.name === 'level' && (
+        <Placeholder title={`Level ${route.id}`}>
+          <p>The level screen arrives in milestone M4.</p>
+        </Placeholder>
+      )}
+      {route.name === 'sandbox' && <Placeholder title="Sandbox" />}
+      {route.name === 'settings' && <Placeholder title="Settings" />}
+      {route.name === 'gallery' && <Placeholder title="Component gallery" />}
+      {route.name === 'notFound' && (
+        <Placeholder title="Page not found">
+          <p>
+            Nothing lives at <code>{route.path}</code>.{' '}
+            <a href={routeHref({ name: 'map' })}>Back to the map</a>
+          </p>
+        </Placeholder>
+      )}
+    </AppShell>
   );
 }

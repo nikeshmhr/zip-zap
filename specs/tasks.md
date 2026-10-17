@@ -92,7 +92,7 @@
 
 ## M3: Editor core
 
-- [ ] **T3.1 App shell** · hash router (`#/map`, `#/level/:id`, `#/sandbox`, `#/settings`), CSS-variable theming (light/dark/system), screen placeholders
+- [x] **T3.1 App shell** · hash router (`#/map`, `#/level/:id`, `#/sandbox`, `#/settings`), CSS-variable theming (light/dark/system), screen placeholders
   - Done when: navigating between routes works and the theme follows the OS setting.
 - [ ] **T3.2 Editor store** · Zustand + Immer: circuit, selection, history (cap 200, one entry per gesture) (plan §6)
   - Done when: store tests cover add/move/delete/wire plus undo/redo.

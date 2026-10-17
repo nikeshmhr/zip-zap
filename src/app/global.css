@@ -1,41 +1,105 @@
+/*
+ * Design tokens. Light by default; dark follows the OS unless the player picks a theme
+ * (data-theme on <html>). ON/OFF never relies on colour alone (spec §11).
+ */
 :root {
-  --bg: #fafaf7;
-  --fg: #1d1d1f;
-  --muted: #6b6b70;
-  color-scheme: light dark;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #efeee9;
+  --border: #dcdad3;
+  --text: #1c1c1e;
+  --text-muted: #6a6a70;
+  --accent: #d9480f;
+  --accent-soft: #fde4d6;
+  --grid-dot: #d6d4cc;
+  --wire-on: #e8590c;
+  --wire-off: #9a9890;
+  --part-fill: #ffffff;
+  --part-stroke: #3a3a3e;
+  --selection: #1c7ed6;
+  --danger: #c92a2a;
+  --success: #2b8a3e;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.06);
+  --radius: 10px;
+  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #141416;
-    --fg: #f2f2f0;
-    --muted: #9a9aa0;
+  :root:not([data-theme='light']) {
+    --bg: #131315;
+    --surface: #1c1c1f;
+    --surface-2: #26262a;
+    --border: #34343a;
+    --text: #f1f0ec;
+    --text-muted: #9c9ba2;
+    --accent: #ff8a3d;
+    --accent-soft: #3a2416;
+    --grid-dot: #2c2c31;
+    --wire-on: #ff9b4f;
+    --wire-off: #6a6970;
+    --part-fill: #222226;
+    --part-stroke: #c9c8c2;
+    --selection: #4dabf7;
+    --danger: #ff6b6b;
+    --success: #51cf66;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.3);
+    color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #131315;
+  --surface: #1c1c1f;
+  --surface-2: #26262a;
+  --border: #34343a;
+  --text: #f1f0ec;
+  --text-muted: #9c9ba2;
+  --accent: #ff8a3d;
+  --accent-soft: #3a2416;
+  --grid-dot: #2c2c31;
+  --wire-on: #ff9b4f;
+  --wire-off: #6a6970;
+  --part-fill: #222226;
+  --part-stroke: #c9c8c2;
+  --selection: #4dabf7;
+  --danger: #ff6b6b;
+  --success: #51cf66;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.3);
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
   background: var(--bg);
-  color: var(--fg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-.placeholder {
-  display: grid;
-  place-content: center;
-  min-height: 100vh;
-  text-align: center;
+a {
+  color: inherit;
 }
 
-.placeholder p {
-  color: var(--muted);
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--selection);
+  outline-offset: 2px;
 }
