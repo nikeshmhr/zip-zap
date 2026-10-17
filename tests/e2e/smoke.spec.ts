@@ -14,8 +14,9 @@ test('navigates between screens with the header', async ({ page }) => {
     .click();
   await expect(page).toHaveURL(/#\/sandbox$/);
   await expect(page.getByRole('application', { name: 'Sandbox circuit' })).toBeVisible();
-  await page.goto('/#/level/2.3');
-  await expect(page.getByRole('heading', { name: 'Level 2.3' })).toBeVisible();
+  await page.goto('/#/level/1.3');
+  await expect(page.getByRole('heading', { name: '1.3 OR' })).toBeVisible();
+  await expect(page.locator('[data-tool]')).toHaveCount(5); // constants, NAND, NOT, AND
 });
 
 test('follows the OS colour scheme', async ({ page }) => {
