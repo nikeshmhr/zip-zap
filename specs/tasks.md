@@ -121,7 +121,7 @@
   - Done when: a wrong XOR highlights exactly the failing rows, and clicking one reproduces it live.
 - [x] **T4.4 Blocked-run feedback** · short/invalid circuits block the run with a clear message and highlight the offending wires
   - Done when: an attempted run with two NAND outputs joined shows the short message and highlight.
-- [ ] **T4.5 Solve flow** · metrics vs best, solve dialog, chip unlock toast, "Next level"
+- [x] **T4.5 Solve flow** · metrics vs best, solve dialog, chip unlock toast, "Next level"
   - Done when: solving 0.4 unlocks NAND and opens 1.1.
 - [ ] **T4.6 Concept cards and hints** · markdown modal on first open (re-openable); 2-step hint reveal
   - Done when: the concept card appears on first visit only, and hints reveal in order.

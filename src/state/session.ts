@@ -4,7 +4,7 @@
  */
 import { create } from 'zustand';
 import type { Metrics } from '../engine/metrics.ts';
-import type { LevelIo } from '../engine/model.ts';
+import type { Circuit, LevelIo } from '../engine/model.ts';
 import { startCircuit } from './editing.ts';
 import type { EditorStore } from './editorStore.ts';
 import { createEditorStore } from './editorStore.ts';
@@ -28,6 +28,8 @@ export interface LevelProgress {
   solved: boolean;
   /** Best part count and best delay, which may come from different solutions. */
   best?: { count: number; delay?: number };
+  /** The most recent solving design; it's what this level's chip contains. */
+  design?: Circuit;
   /** Hints revealed so far (0–2). */
   hints: number;
   /** Whether the concept card has been shown automatically. */
@@ -38,7 +40,7 @@ export interface ProgressState {
   levels: Record<string, LevelProgress>;
   get(id: string): LevelProgress;
   /** Records a solve. Returns whether either best improved (always true the first time). */
-  markSolved(id: string, metrics: { count: number; delay?: number }): boolean;
+  markSolved(id: string, metrics: { count: number; delay?: number }, design: Circuit): boolean;
   revealHint(id: string): void;
   markConceptSeen(id: string): void;
 }
@@ -48,7 +50,7 @@ const EMPTY: LevelProgress = { solved: false, hints: 0, conceptSeen: false };
 export const useProgress = create<ProgressState>()((set, get) => ({
   levels: {},
   get: (id) => get().levels[id] ?? EMPTY,
-  markSolved: (id, metrics) => {
+  markSolved: (id, metrics, design) => {
     const current = get().get(id);
     const old = current.best;
     const best = {
@@ -62,7 +64,7 @@ export const useProgress = create<ProgressState>()((set, get) => ({
     };
     const improved =
       !old || best.count < old.count || (best.delay ?? Infinity) < (old.delay ?? Infinity);
-    set({ levels: { ...get().levels, [id]: { ...current, solved: true, best } } });
+    set({ levels: { ...get().levels, [id]: { ...current, solved: true, best, design } } });
     return improved;
   },
   revealHint: (id) => {

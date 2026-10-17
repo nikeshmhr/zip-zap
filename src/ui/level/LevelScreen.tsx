@@ -1,14 +1,17 @@
 /**
  * A level: header, editor with the level's toolbox, and the goal panel (plan §8).
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { catalogue } from '../../content/index.ts';
 import type { LevelDef } from '../../content/types.ts';
 import { routeHref } from '../../app/router.ts';
-import { levelEditor } from '../../state/session.ts';
+import { levelEditor, useProgress } from '../../state/session.ts';
 import { CircuitEditor } from '../editor/CircuitEditor.tsx';
 import { Placeholder } from '../screens/Placeholder.tsx';
 import { GoalPanel } from './GoalPanel.tsx';
+import { formatCount, solveMetrics } from './solve.ts';
+import type { SolveResult } from './SolveDialog.tsx';
+import { SolveDialog } from './SolveDialog.tsx';
 import styles from './LevelScreen.module.css';
 
 export function LevelScreen({ id }: { id: string }) {
@@ -29,6 +32,9 @@ function Level({ level }: { level: LevelDef }) {
   const store = useMemo(() => levelEditor(level.id, level), [level]);
   const options = useMemo(() => catalogue.validateOptions(level.id), [level.id]);
   const chapter = catalogue.chapters.find((c) => c.id === level.chapter);
+  const progress = useProgress((s) => s.get(level.id));
+  const [solved, setSolved] = useState<SolveResult | null>(null);
+  const unit = level.chapter === 0 ? 'relay' : 'NAND';
 
   return (
     <div className={styles.level}>
@@ -44,7 +50,14 @@ function Level({ level }: { level: LevelDef }) {
             <span className={styles.number}>{level.id}</span> {level.title}
           </h1>
         </div>
-        <div className={styles.actions} />
+        <div className={styles.actions}>
+          {progress.solved && progress.best && (
+            <span className={styles.badge} title="Your best solution">
+              ✓ Solved · best {formatCount(progress.best.count, unit)}
+              {progress.best.delay !== undefined && `, delay ${progress.best.delay}`}
+            </span>
+          )}
+        </div>
       </header>
       <div className={styles.body}>
         <CircuitEditor
@@ -56,9 +69,21 @@ function Level({ level }: { level: LevelDef }) {
           toolbox={catalogue.toolbox(level.id)}
         />
         <aside className={styles.panel} aria-label="Level">
-          <GoalPanel level={level} store={store} />
+          <GoalPanel
+            level={level}
+            store={store}
+            onSolved={(_, circuit) => {
+              const metrics = solveMetrics(level, circuit);
+              const previousBest = useProgress.getState().get(level.id).best;
+              const improved = useProgress
+                .getState()
+                .markSolved(level.id, metrics ?? { count: 0 }, circuit);
+              setSolved({ metrics, previousBest, improved });
+            }}
+          />
         </aside>
       </div>
+      <SolveDialog level={level} result={solved} onClose={() => setSolved(null)} />
     </div>
   );
 }

@@ -79,3 +79,30 @@ test('a shorted circuit blocks the run, explains why and marks the wires', async
   await expect(summary).toContainText("there's a short circuit");
   await expect(summary).toContainText('Only relay outputs can be joined');
 });
+
+test('solving 0.4 shows metrics, unlocks NAND and leads on to 1.1', async ({ page }) => {
+  await page.goto('/#/level/0.4');
+  const canvas = page.getByRole('application');
+  const drop = (kind: string, x: number, y: number) =>
+    page.locator(`[data-tool="${kind}"]`).dragTo(canvas, { targetPosition: { x, y } });
+  await drop('power', 200, 300);
+  await drop('relayNC', 420, 180);
+  await drop('relayNC', 420, 420);
+  await drawWire(page, 'p1|out|out', 'p2|in|in');
+  await drawWire(page, 'p1|out|out', 'p3|in|in');
+  await drawWire(page, 'in:A|out|out', 'p2|coil|in');
+  await drawWire(page, 'in:B|out|out', 'p3|coil|in');
+  await drawWire(page, 'p2|out|out', 'out:OUT|in|in');
+  await drawWire(page, 'p3|out|out', 'out:OUT|in|in');
+  await page.getByRole('button', { name: 'Run tests' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Level solved' });
+  await expect(dialog).toContainText('2 relays');
+  await expect(dialog).toContainText('1 tick');
+  await expect(dialog).toContainText('NAND is now in your toolbox');
+  await dialog.getByRole('button', { name: /Next: 1.1 NOT/ }).click();
+
+  await expect(page).toHaveURL(/#\/level\/1\.1$/);
+  await expect(page.locator('[data-tool="nand"]')).toBeVisible();
+  await expect(page.locator('[data-tool="relayNC"]')).toHaveCount(0);
+});

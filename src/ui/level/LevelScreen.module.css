@@ -85,3 +85,13 @@
     grid-template-columns: 1fr 300px;
   }
 }
+
+.badge {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}

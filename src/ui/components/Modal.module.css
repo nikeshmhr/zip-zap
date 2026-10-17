@@ -1,0 +1,38 @@
+.modal {
+  width: min(520px, calc(100% - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.25);
+}
+
+.modal[data-size='small'] {
+  width: min(420px, calc(100% - 32px));
+}
+
+.modal::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+
+.modal[open] {
+  animation: pop 180ms ease-out;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal[open] {
+    animation: none;
+  }
+}
+
+.content {
+  padding: 22px 24px;
+}
