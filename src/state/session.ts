@@ -43,6 +43,8 @@ export interface ProgressState {
   markSolved(id: string, metrics: { count: number; delay?: number }, design: Circuit): boolean;
   revealHint(id: string): void;
   markConceptSeen(id: string): void;
+  /** Replaces all progress (loading a save, importing, resetting). */
+  replaceAll(levels: Record<string, LevelProgress>): void;
 }
 
 const EMPTY: LevelProgress = { solved: false, hints: 0, conceptSeen: false };
@@ -73,6 +75,7 @@ export const useProgress = create<ProgressState>()((set, get) => ({
       levels: { ...get().levels, [id]: { ...current, hints: Math.min(2, current.hints + 1) } },
     });
   },
+  replaceAll: (levels) => set({ levels }),
   markConceptSeen: (id) => {
     const current = get().get(id);
     if (current.conceptSeen) return;

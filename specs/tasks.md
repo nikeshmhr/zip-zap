@@ -130,7 +130,7 @@
 
 ## M5: Progression and persistence
 
-- [ ] **T5.1 Progress store and unlock rules** · solved/bests per level; in-chapter ordering; chapter gating
+- [x] **T5.1 Progress store and unlock rules** · solved/bests per level; in-chapter ordering; chapter gating
   - Done when: the unit tests for the unlock rules pass.
 - [ ] **T5.2 Save schema** · Zod `SaveV1`, migration chain, corrupt-save quarantine (plan §7)
   - Done when: tests cover a round-trip, a v1 fixture migration, and a corrupt-save backup.
