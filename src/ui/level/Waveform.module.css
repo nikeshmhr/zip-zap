@@ -1,0 +1,86 @@
+.scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.wave {
+  display: block;
+  font-family: var(--mono);
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--text-muted);
+}
+
+.tick {
+  font-size: 9px;
+  fill: var(--text-muted);
+  text-anchor: middle;
+}
+
+.input,
+.output,
+.expected,
+.actual {
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.input {
+  stroke: var(--text-muted);
+}
+
+.output {
+  stroke: var(--wire-on);
+}
+
+.expected {
+  stroke: var(--text-muted);
+  stroke-dasharray: 3 2;
+}
+
+.actual {
+  stroke: var(--wire-on);
+  stroke-width: 2;
+}
+
+.busIn,
+.busOut {
+  stroke-width: 1.2;
+}
+
+.busIn {
+  fill: var(--surface-2);
+  stroke: var(--text-muted);
+}
+
+.busOut {
+  fill: color-mix(in srgb, var(--wire-on) 15%, transparent);
+  stroke: var(--wire-on);
+}
+
+.busText {
+  font-size: 9px;
+  text-anchor: middle;
+  fill: var(--text);
+}
+
+.hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.hit:hover {
+  fill: color-mix(in srgb, var(--selection) 8%, transparent);
+}
+
+.selected {
+  fill: color-mix(in srgb, var(--selection) 16%, transparent);
+}
+
+.bad {
+  fill: color-mix(in srgb, var(--danger) 16%, transparent);
+}

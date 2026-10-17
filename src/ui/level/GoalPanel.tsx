@@ -13,6 +13,7 @@ import type { EditorStore } from '../../state/editorStore.ts';
 import { Hints } from './Hints.tsx';
 import type { StepRef } from './StepTable.tsx';
 import { StepTable } from './StepTable.tsx';
+import { Waveform } from './Waveform.tsx';
 import { TruthTable } from './TruthTable.tsx';
 import styles from './GoalPanel.module.css';
 
@@ -66,6 +67,7 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
   );
 
   // The step shown on the canvas, valid while the switches and circuit are as it left them.
+  const [view, setView] = useState<'steps' | 'timing'>('steps');
   const [shown, setShown] = useState<{ ref: StepRef; inputs: Bits; circuit: Circuit } | null>(null);
   const shownStep =
     shown && shown.inputs === live && shown.circuit === circuit ? shown.ref : undefined;
@@ -102,15 +104,42 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
             onRowClick={setSwitches}
           />
         ) : (
-          <StepTable
-            inputs={level.inputs}
-            outputs={level.outputs}
-            plan={plan}
-            clockPin={level.clock?.pin}
-            results={run && !stale ? run.report.cases : undefined}
-            selected={shownStep}
-            onSelect={showStep}
-          />
+          <>
+            <div className={styles.tabs} role="tablist" aria-label="Goal view">
+              {(['steps', 'timing'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="tab"
+                  aria-selected={view === v}
+                  className={styles.tab}
+                  onClick={() => setView(v)}
+                >
+                  {v === 'steps' ? 'Steps' : 'Timing'}
+                </button>
+              ))}
+            </div>
+            {view === 'steps' ? (
+              <StepTable
+                inputs={level.inputs}
+                outputs={level.outputs}
+                plan={plan}
+                clockPin={level.clock?.pin}
+                results={run && !stale ? run.report.cases : undefined}
+                selected={shownStep}
+                onSelect={showStep}
+              />
+            ) : (
+              <Waveform
+                inputs={level.inputs}
+                outputs={level.outputs}
+                plan={plan}
+                results={run && !stale ? run.report.cases : undefined}
+                selected={shownStep}
+                onSelect={showStep}
+              />
+            )}
+          </>
         )}
       </section>
       <section className={styles.section} aria-label="Tests">

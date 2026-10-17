@@ -151,7 +151,7 @@
   - Done when: the D Latch and DFF goals render clearly.
 - [x] **T6.2 Step scrubbing** · results jump to the first failing step; scrubbing replays the circuit to any step
   - Done when: a broken DFF shows the failing step and the canvas state at that step.
-- [ ] **T6.3 Waveform view** _(Should)_ · timing diagram of all IO pins over the steps, expected vs actual
+- [x] **T6.3 Waveform view** _(Should)_ · timing diagram of all IO pins over the steps, expected vs actual
   - Done when: the waveform renders for 4.x levels, with mismatches highlighted.
 - [ ] **T6.4 Tick-by-tick mode** _(Should)_ · advance one tick at a time; shows propagation and oscillation
   - Done when: a player can watch an SR latch settle tick by tick.

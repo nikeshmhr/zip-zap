@@ -43,3 +43,12 @@ test('a failed run jumps to the first failing step and shows the circuit at that
   await page.locator('[data-toggle="D"]').click();
   await expect(page.locator('tr[data-live]')).toHaveCount(0);
 });
+
+test('the timing view draws the signals and scrubs by clicking a step', async ({ page }) => {
+  await openLevel(page, '4.2');
+  await page.getByRole('tab', { name: 'Timing' }).click();
+  await expect(page.getByRole('img', { name: /Timing diagram/ })).toBeVisible();
+  await page.locator('[data-wave-step="0:4"]').click();
+  await page.getByRole('tab', { name: 'Steps' }).click();
+  await expect(steps(page).nth(4)).toHaveAttribute('data-live');
+});
