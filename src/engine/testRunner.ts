@@ -116,7 +116,9 @@ function runSequential(sim: Simulator, spec: TestSpec, goal: SequentialGoal): Ca
     const inputs: Bits = Object.fromEntries(spec.inputs.map((name) => [name, 0]));
 
     steps.forEach((step, stepIndex) => {
-      Object.assign(inputs, step.set);
+      for (const [name, value] of Object.entries(step.set)) {
+        if (value !== undefined) inputs[name] = value;
+      }
       sim.setInputs(step.set);
       const { stable } = sim.settle();
 

@@ -158,6 +158,20 @@ describe('runTests: sequential', () => {
     });
   });
 
+  it('ignores undefined values in a step, keeping model and circuit in agreement', () => {
+    const spec: TestSpec = {
+      ...dLatchSpec,
+      goal: {
+        kind: 'sequential',
+        model: dLatchModel,
+        sequences: [[{ set: { EN: 1, D: 1 } }, { set: { D: undefined } }]],
+      },
+    };
+    const report = run(spec, dLatch);
+    expect(report.passed).toBe(true);
+    expect(report.cases[1]!.inputs).toEqual({ D: 1, EN: 1 });
+  });
+
   it('checks only the listed outputs when a step has explicit expectations', () => {
     const spec: TestSpec = {
       inputs: ['D', 'EN'],
