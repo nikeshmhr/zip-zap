@@ -27,7 +27,7 @@
   - Done when: `pnpm dev` serves a "Zip Zap" placeholder page and `pnpm build` succeeds.
 - [x] **T0.3 Lint and format** · ESLint (incl. a rule that `engine/` may not import from `ui/`, `state/` or React) + Prettier; `lint`, `format`, `typecheck` scripts
   - Done when: an engine file that imports React fails lint.
-- [ ] **T0.4 Unit tests** · Vitest configured; one sample test; `pnpm check` = typecheck + lint + test
+- [x] **T0.4 Unit tests** · Vitest configured; one sample test; `pnpm check` = typecheck + lint + test
   - Done when: `pnpm check` passes.
 - [ ] **T0.5 E2E tests** · Playwright configured against the dev server; smoke test loads the placeholder
   - Done when: `pnpm e2e` passes.

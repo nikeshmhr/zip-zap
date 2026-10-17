@@ -24,6 +24,8 @@ pnpm dev        # start the dev server
 pnpm build      # typecheck and build to dist/
 pnpm lint       # ESLint, including layer-boundary rules
 pnpm format     # Prettier
+pnpm test       # unit tests (Vitest)
+pnpm check      # typecheck + lint + format check + unit tests
 ```
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
