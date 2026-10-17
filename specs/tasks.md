@@ -140,7 +140,7 @@
   - Done when: the map reflects progress, and locked levels can't be opened from the URL either.
 - [x] **T5.5 Settings screen** · theme, sound, motion, export/import (with confirmation), reset progress (with confirmation)
   - Done when: export, then import into a cleared browser, restores everything.
-- [ ] **T5.6 Sandbox** · every unlocked chip, free IO pins, no goal, persisted
+- [x] **T5.6 Sandbox** · every unlocked chip, free IO pins, no goal, persisted
   - Done when: the player can build freely with unlocked chips, and the circuit survives a reload.
 - [ ] **T5.7 E2E: persistence** · reload restores progress and circuits; export → import round-trip; unlock 0.4 → chapter 1
   - Done when: `pnpm e2e` passes (spec AC 4, 6, 7).

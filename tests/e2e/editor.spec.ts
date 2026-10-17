@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
+import { openLevel, unlockLevel } from './support/editor.ts';
 
 /** Centre of an element on screen. */
 async function centre(page: Page, selector: string) {
@@ -11,9 +12,17 @@ async function centre(page: Page, selector: string) {
 const selectedParts = (page: Page) =>
   page.locator('[data-selected]').evaluateAll((els) => els.map((e) => e.getAttribute('data-part')));
 
+/**
+ * Every test starts in the sandbox with everything unlocked, a NAND (p1) and an XOR chip (p2)
+ * next to the default switches A, B and lamp OUT.
+ */
 test.beforeEach(async ({ page }) => {
+  await unlockLevel(page, 'everything');
   await page.goto('/#/sandbox');
-  await expect(page.locator('[data-part="p1"]')).toBeVisible();
+  await page.locator('[data-tool="nand"]').click();
+  await page.locator('[data-tool="chip:xor"]').click();
+  await page.locator('[data-part="p2"]').waitFor();
+  await page.mouse.click(5 + (await page.getByRole('application').boundingBox())!.x, 790);
 });
 
 test('drags a part in whole grid steps and selects it', async ({ page }) => {
@@ -45,7 +54,8 @@ test('clicking empty canvas clears the selection; dragging box-selects', async (
   expect((await selectedParts(page)).sort()).toEqual(['in:A', 'in:B', 'out:OUT', 'p1', 'p2']);
 });
 
-test('level IO cannot be dragged', async ({ page }) => {
+test('level IO cannot be dragged (it can in the sandbox)', async ({ page }) => {
+  await openLevel(page, '1.1');
   const input = page.locator('[data-part="in:A"]');
   const before = await input.getAttribute('transform');
   const start = await centre(page, '[data-part="in:A"] text');
@@ -133,9 +143,17 @@ test('the toolbox lists exactly the parts on offer', async ({ page }) => {
   const tools = await page
     .locator('[data-tool]')
     .evaluateAll((els) => els.map((e) => e.getAttribute('data-tool')));
-  expect(tools.slice(0, 6)).toEqual(['power', 'const0', 'const1', 'relayNO', 'relayNC', 'nand']);
+  expect(tools.slice(0, 8)).toEqual([
+    'in',
+    'out',
+    'power',
+    'const0',
+    'const1',
+    'relayNO',
+    'relayNC',
+    'nand',
+  ]);
   expect(tools).toContain('chip:ram4x4');
-  expect(tools).not.toContain('in');
 });
 
 test('keyboard shortcuts: undo/redo, duplicate, rotate, select all, inputs and help', async ({

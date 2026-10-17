@@ -42,8 +42,8 @@ const PRIMITIVE_NAMES: Partial<Record<ComponentKind, string>> = {
   relayNO: 'Relay (normally open)',
   relayNC: 'Relay (normally closed)',
   nand: 'NAND',
-  in: 'Input',
-  out: 'Output',
+  in: 'Switch',
+  out: 'Lamp',
 };
 
 /** Builds a catalogue, checking the level list is consistent. Throws on authoring mistakes. */

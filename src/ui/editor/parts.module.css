@@ -87,6 +87,9 @@
 .ioLabel {
   font-size: 0.85px;
   font-weight: 700;
+  /* The label is the handle for selecting and moving a switch or lamp. */
+  pointer-events: auto;
+  cursor: default;
 }
 
 .chipName {

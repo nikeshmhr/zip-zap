@@ -61,6 +61,7 @@ export function addComponent(
   circuit: Circuit,
   kind: ComponentKind,
   pos: Point,
+  label?: string,
 ): { circuit: Circuit; id: string } {
   const id = nextId(
     circuit.components.map((c) => c.id),
@@ -72,6 +73,7 @@ export function addComponent(
       kind,
       pos: { x: Math.round(pos.x), y: Math.round(pos.y) },
       rot: 0,
+      ...(label === undefined ? {} : { label }),
     });
   });
   return { circuit: next, id };
@@ -181,3 +183,20 @@ export const isEditable = (circuit: Circuit, id: string, opts: EditOptions = LEV
   const c = circuit.components.find((x) => x.id === id);
   return !!c && !isFixed(c, opts);
 };
+
+/**
+ * The next free name for a free-standing switch or lamp (sandbox): inputs are A, B, C…;
+ * outputs are OUT, OUT2, OUT3…
+ */
+export function nextIoLabel(circuit: Circuit, kind: 'in' | 'out'): string {
+  const taken = new Set(circuit.components.filter((c) => c.kind === kind).map((c) => c.label));
+  if (kind === 'in') {
+    for (let i = 0; i < 26; i++) {
+      const label = String.fromCharCode(65 + i);
+      if (!taken.has(label)) return label;
+    }
+    for (let i = 2; ; i++) if (!taken.has(`IN${i}`)) return `IN${i}`;
+  }
+  if (!taken.has('OUT')) return 'OUT';
+  for (let i = 2; ; i++) if (!taken.has(`OUT${i}`)) return `OUT${i}`;
+}

@@ -34,17 +34,15 @@ export function matchesIo(circuit: Circuit, io: LevelIo): boolean {
 }
 
 /**
- * The editor for a level, created from the saved circuit if it still fits the level, else the
- * level's start circuit. Pass `io: null` for free-form circuits (the sandbox).
+ * The editor for a level, created from the saved circuit if it still fits the level, else a
+ * start circuit with `io`. With `fixedIo` false (the sandbox) switches and lamps are editable
+ * and any saved circuit is accepted.
  */
-export function levelEditor(id: string, io: LevelIo | null, fixedIo = true): EditorStore {
+export function levelEditor(id: string, io: LevelIo, fixedIo = true): EditorStore {
   let store = editors.get(id);
   if (!store) {
     const saved = savedCircuits[id];
-    const initial =
-      saved && (io === null || matchesIo(saved, io))
-        ? saved
-        : startCircuit(io ?? { inputs: [], outputs: [] });
+    const initial = saved && (!fixedIo || matchesIo(saved, io)) ? saved : startCircuit(io);
     store = createEditorStore(initial, {}, { fixedIo });
     editors.set(id, store);
     store.subscribe((state, previous) => {

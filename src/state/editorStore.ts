@@ -10,6 +10,7 @@ import type { Bit, Bits, Circuit, ComponentKind, Point } from '../engine/model.t
 import type { EditOptions } from './editing.ts';
 import {
   addComponent,
+  nextIoLabel,
   deleteItems,
   duplicateComponents,
   moveComponents,
@@ -52,6 +53,7 @@ export interface EditorActions {
   undo(): void;
   redo(): void;
 
+  /** Adds a part (switches and lamps get the next free name) and selects it. */
   addPart(kind: ComponentKind, pos: Point): string;
   /** Wires two pins if the wiring rules allow it. */
   connect(a: PinEnd, b: PinEnd, ctx: WiringContext): ConnectResult;
@@ -155,7 +157,12 @@ export function createEditorStore(
     addPart: (kind, pos) => {
       let id = '';
       get().commit((circuit) => {
-        const result = addComponent(circuit, kind, pos);
+        const result = addComponent(
+          circuit,
+          kind,
+          pos,
+          kind === 'in' || kind === 'out' ? nextIoLabel(circuit, kind) : undefined,
+        );
         id = result.id;
         return result.circuit;
       });
