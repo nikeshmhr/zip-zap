@@ -4,7 +4,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand';
-import type { ComponentKind, Point } from '../../engine/model.ts';
+import type { Bit, ComponentKind, Point } from '../../engine/model.ts';
 import type { ComponentResolver } from '../../engine/primitives.ts';
 import type { ValidateOptions } from '../../engine/validate.ts';
 import type { EditorStore } from '../../state/editorStore.ts';
@@ -25,6 +25,8 @@ import {
 import { hitTest } from './hitTest.ts';
 import type { Effect, InteractionContext, Mode, PointerInput } from './interaction.ts';
 import { IDLE, cancel, normalizeRect, pointerDown, pointerMove, pointerUp } from './interaction.ts';
+import type { LiveSnapshot } from './liveSimulation.ts';
+import { LiveSimulation } from './liveSimulation.ts';
 import { PartView } from './PartView.tsx';
 import { WireView } from './WireView.tsx';
 import styles from './CircuitEditor.module.css';
@@ -57,6 +59,11 @@ export function CircuitEditor(props: CircuitEditorProps) {
   const { store, resolve, displayName, label, options } = props;
   const circuit = useStore(store, (s) => s.circuit);
   const selection = useStore(store, (s) => s.selection);
+  const inputs = useStore(store, (s) => s.inputs);
+
+  // Live simulation: one simulator per circuit version, so latches remember between toggles.
+  const live = useMemo(() => new LiveSimulation(resolve, options), [resolve, options]);
+  const snapshot = useMemo(() => live.evaluate(circuit, inputs), [live, circuit, inputs]);
 
   const geomOf = useMemo(() => createGeometryLookup(resolve, displayName), [resolve, displayName]);
 
@@ -199,7 +206,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
       if (n < 2) return [];
       const [comp = '', pin = ''] = key.split('|');
       const anchor = pinAnchor(comp, pin, 'in');
-      return anchor ? [{ key, at: anchor.at }] : [];
+      return anchor ? [{ key, at: anchor.at, comp, pin }] : [];
     });
   }, [circuit.wires, pinAnchor]);
 
@@ -232,11 +239,14 @@ export function CircuitEditor(props: CircuitEditorProps) {
       }}
       onPointerUp={(e) => run(pointerUp(modeRef.current, toInput(e), context()))}
       overlay={
-        toast && (
-          <div key={toast.key} className={styles.toast} role="status">
-            {toast.message}
-          </div>
-        )
+        <>
+          <StatusBadge snapshot={snapshot} />
+          {toast && (
+            <div key={toast.key} className={styles.toast} role="status">
+              {toast.message}
+            </div>
+          )}
+        </>
       }
     >
       {wires.map(({ wire, points }) => (
@@ -244,7 +254,9 @@ export function CircuitEditor(props: CircuitEditorProps) {
           key={wire.id}
           id={wire.id}
           points={points}
+          on={snapshot.pin(wire.from.comp, wire.from.pin) === 1}
           selected={selectedWires.has(wire.id)}
+          flagged={snapshot.flaggedWires.has(wire.id)}
         />
       ))}
       <g
@@ -260,16 +272,51 @@ export function CircuitEditor(props: CircuitEditorProps) {
               part={part}
               geom={geom}
               name={displayName(part.kind)}
+              values={pinValues(snapshot, part.id, geom.pins)}
               selected={selected.has(part.id)}
+              flagged={snapshot.flaggedParts.has(part.id)}
             />
           );
         })}
       </g>
-      {junctions.map(({ key, at }) => (
-        <circle key={key} className={wireStyles.junction} cx={at.x} cy={at.y} r={0.28} />
+      {junctions.map(({ key, at, comp, pin }) => (
+        <circle
+          key={key}
+          className={wireStyles.junction}
+          data-on={snapshot.pin(comp, pin) === 1 || undefined}
+          cx={at.x}
+          cy={at.y}
+          r={0.28}
+        />
       ))}
       {preview && <path className={wireStyles.preview} d={preview} />}
       {box && <rect className={styles.box} {...box} />}
     </Canvas>
+  );
+}
+
+function pinValues(
+  snapshot: LiveSnapshot,
+  comp: string,
+  pins: readonly { name: string }[],
+): Record<string, Bit> {
+  const values: Record<string, Bit> = {};
+  for (const { name } of pins) values[name] = snapshot.pin(comp, name);
+  return values;
+}
+
+const STATUS_TEXT: Record<Exclude<LiveSnapshot['status'], 'ok'>, string> = {
+  unstable: 'Oscillating: this circuit never settles. Check your feedback loops.',
+  short: 'Short circuit: two outputs are wired together.',
+  invalid: 'This circuit has a problem.',
+};
+
+function StatusBadge({ snapshot }: { snapshot: LiveSnapshot }) {
+  if (snapshot.status === 'ok') return null;
+  const detail = snapshot.status === 'invalid' ? snapshot.issues[0]?.message : undefined;
+  return (
+    <div className={styles.badge} data-status={snapshot.status} role="alert">
+      {detail ?? STATUS_TEXT[snapshot.status]}
+    </div>
   );
 }

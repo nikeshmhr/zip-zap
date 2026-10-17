@@ -92,3 +92,25 @@ test('selects a wire and deletes it with the Delete key', async ({ page }) => {
   await page.keyboard.press('Delete');
   await expect(page.locator('[data-wire]')).toHaveCount(0);
 });
+
+test('simulates live: toggling inputs updates wires and the lamp', async ({ page }) => {
+  await drawWire(page, 'in:A|out|out', 'p1|a|in');
+  await drawWire(page, 'in:B|out|out', 'p1|b|in');
+  await drawWire(page, 'p1|out|out', 'out:OUT|in|in');
+  const lampOn = page.locator('[data-part="out:OUT"] circle[data-on]').first();
+  const wireA = page.locator('[data-wire="w1"]');
+
+  await expect(lampOn).toBeVisible(); // NAND(0, 0) = 1
+  await expect(wireA).not.toHaveAttribute('data-on');
+  await page.locator('[data-toggle="A"]').click();
+  await expect(wireA).toHaveAttribute('data-on');
+  await page.locator('[data-toggle="B"]').click();
+  await expect(page.locator('[data-part="out:OUT"] circle[data-on]')).toHaveCount(0);
+});
+
+test('shows an oscillation badge for a loop that never settles', async ({ page }) => {
+  await drawWire(page, 'p2|OUT|out', 'p2|A|in');
+  await page.locator('[data-toggle="A"]').click(); // irrelevant input, keeps the loop running
+  await drawWire(page, 'in:A|out|out', 'p2|B|in');
+  await expect(page.getByRole('alert')).toContainText('Oscillating');
+});

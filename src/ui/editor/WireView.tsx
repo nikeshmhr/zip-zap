@@ -34,6 +34,7 @@ export const WireView = memo(function WireView({
       <path className={styles.hit} d={d} />
       {selected && <path className={styles.halo} d={d} />}
       <path className={styles.line} d={d} />
+      {on && <path className={styles.flow} d={d} />}
     </g>
   );
 });

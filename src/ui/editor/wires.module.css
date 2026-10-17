@@ -60,3 +60,27 @@
 .junction[data-on] {
   fill: var(--wire-on);
 }
+
+/* Signal flow: bright dashes travelling along ON wires. */
+.flow {
+  fill: none;
+  stroke: var(--bg);
+  stroke-opacity: 0.55;
+  stroke-width: 0.1;
+  stroke-dasharray: 0.15 1.35;
+  stroke-linecap: round;
+  pointer-events: none;
+  animation: flow 900ms linear infinite;
+}
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow {
+    display: none;
+  }
+}

@@ -41,3 +41,18 @@
     animation: none;
   }
 }
+
+.badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  max-width: calc(100% - 32px);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--danger);
+  background: var(--surface);
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
