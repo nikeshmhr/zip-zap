@@ -108,7 +108,7 @@
   - Done when: toggling inputs on a NAND circuit updates the wires live; a ring oscillator shows the badge without freezing.
 - [x] **T3.8 Toolbox panel** · lists the resolved toolbox for the current context, with drag-to-place
   - Done when: the panel shows exactly the components the level allows.
-- [ ] **T3.9 Keyboard shortcuts** · delete, undo/redo, duplicate, rotate, space-pan, digits toggle inputs
+- [x] **T3.9 Keyboard shortcuts** · delete, undo/redo, duplicate, rotate, space-pan, digits toggle inputs
   - Done when: every shortcut works and is listed in a help popover.
 
 ## M4: Level loop

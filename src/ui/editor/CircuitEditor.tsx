@@ -29,6 +29,8 @@ import { IDLE, cancel, normalizeRect, pointerDown, pointerMove, pointerUp } from
 import type { LiveSnapshot } from './liveSimulation.ts';
 import { LiveSimulation } from './liveSimulation.ts';
 import { PartView } from './PartView.tsx';
+import { HelpPanel } from './HelpPanel.tsx';
+import { shortcutFor } from './shortcuts.ts';
 import { KIND_MIME, Toolbox } from './Toolbox.tsx';
 import { WireView } from './WireView.tsx';
 import styles from './CircuitEditor.module.css';
@@ -100,6 +102,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
   const modeRef = useRef<Mode>(IDLE);
   const [mode, setMode] = useState<Mode>(IDLE);
   const [toast, showToast] = useToast();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const context = (): InteractionContext => ({
     selection: store.getState().selection,
@@ -159,14 +162,53 @@ export function CircuitEditor(props: CircuitEditorProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e)) return;
-      if (e.key === 'Escape' && modeRef.current.kind !== 'idle') {
-        const [next, effects] = cancel(modeRef.current);
-        modeRef.current = next;
-        setMode(next);
-        apply(effects);
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && modeRef.current.kind === 'idle') {
-        e.preventDefault();
-        store.getState().deleteSelection();
+      const action = shortcutFor(e);
+      if (!action) return;
+      const s = store.getState();
+      const idle = modeRef.current.kind === 'idle';
+      if (action.type === 'cancel') {
+        if (!idle) {
+          const [next, effects] = cancel(modeRef.current);
+          modeRef.current = next;
+          setMode(next);
+          apply(effects);
+        }
+        setHelpOpen(false);
+        return;
+      }
+      // Don't edit mid-gesture.
+      if (!idle) return;
+      e.preventDefault();
+      switch (action.type) {
+        case 'delete':
+          s.deleteSelection();
+          break;
+        case 'undo':
+          s.undo();
+          break;
+        case 'redo':
+          s.redo();
+          break;
+        case 'duplicate':
+          s.duplicateSelection();
+          break;
+        case 'rotate':
+          s.rotateSelection();
+          break;
+        case 'selectAll':
+          s.select({
+            components: s.circuit.components.map((c) => c.id),
+            wires: s.circuit.wires.map((w) => w.id),
+          });
+          break;
+        case 'help':
+          setHelpOpen((open) => !open);
+          break;
+        case 'toggleInput': {
+          const name = s.circuit.components.filter((c) => c.kind === 'in')[action.index]?.label;
+          if (name) s.toggleInput(name);
+          break;
+        }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -285,6 +327,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
         overlay={
           <>
             <StatusBadge snapshot={snapshot} />
+            <HelpPanel open={helpOpen} onToggle={() => setHelpOpen((open) => !open)} />
             {toast && (
               <div key={toast.key} className={styles.toast} role="status">
                 {toast.message}

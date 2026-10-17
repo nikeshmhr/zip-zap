@@ -137,3 +137,38 @@ test('the toolbox lists exactly the parts on offer', async ({ page }) => {
   expect(tools).toContain('chip:ram4x4');
   expect(tools).not.toContain('in');
 });
+
+test('keyboard shortcuts: undo/redo, duplicate, rotate, select all, inputs and help', async ({
+  page,
+}) => {
+  const parts = page.locator('[data-part]');
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+
+  await page.locator('[data-tool="nand"]').click(); // adds and selects p3
+  await expect(parts).toHaveCount(6);
+  await page.keyboard.press(`${mod}+z`);
+  await expect(parts).toHaveCount(5);
+  await page.keyboard.press(`${mod}+Shift+z`);
+  await expect(parts).toHaveCount(6);
+
+  await page.locator('[data-part="p1"]').click();
+  await page.keyboard.press(`${mod}+d`);
+  await expect(parts).toHaveCount(7);
+
+  await page.locator('[data-part="p1"]').click();
+  await page.keyboard.press('r');
+  await expect(page.locator('[data-part="p1"]')).toHaveAttribute('transform', /rotate\(90\)/);
+
+  await page.keyboard.press(`${mod}+a`);
+  await expect(page.locator('[data-selected]')).toHaveCount(7);
+
+  await page.keyboard.press('1');
+  await expect(page.locator('[data-toggle="A"]')).toHaveAttribute('data-on');
+  await page.keyboard.press('2');
+  await expect(page.locator('[data-toggle="B"]')).toHaveAttribute('data-on');
+
+  await page.keyboard.press('?');
+  await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveCount(0);
+});
