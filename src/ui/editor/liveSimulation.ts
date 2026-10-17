@@ -1,7 +1,7 @@
 /**
- * Live simulation for the editor (spec §4 step 3). Keeps one simulator per circuit version, so
- * toggling an input continues from the current state (a latch remembers) instead of
- * restarting; editing the circuit powers it on afresh.
+ * Live simulation for the editor (spec §4 step 3). Keeps one simulator per circuit topology, so
+ * toggling an input or moving a part continues from the current state (a latch remembers);
+ * changing parts or wires powers it on afresh.
  */
 import { compile } from '../../engine/compile.ts';
 import type { Bit, Bits, Circuit } from '../../engine/model.ts';
@@ -24,8 +24,18 @@ export interface LiveSnapshot {
 const OFF = () => 0 as Bit;
 const EMPTY = new Set<string>();
 
+/** What the simulation depends on: parts and wires, but not layout. */
+export function topologyKey(circuit: Circuit): string {
+  const parts = circuit.components.map((c) => `${c.id}:${c.kind}:${c.label ?? ''}`).join(',');
+  const wires = circuit.wires
+    .map((w) => `${w.from.comp}.${w.from.pin}>${w.to.comp}.${w.to.pin}`)
+    .join(',');
+  return `${parts}|${wires}`;
+}
+
 export class LiveSimulation {
   private circuit: Circuit | null = null;
+  private topology = '';
   private sim: Simulator | null = null;
   private netOf: Map<string, number> | null = null;
   private applied: Bits = {};
@@ -40,7 +50,11 @@ export class LiveSimulation {
   }
 
   evaluate(circuit: Circuit, inputs: Readonly<Bits>): LiveSnapshot {
-    if (circuit !== this.circuit) this.load(circuit);
+    if (circuit !== this.circuit) {
+      const topology = topologyKey(circuit);
+      if (topology !== this.topology) this.load(circuit, topology);
+      this.circuit = circuit;
+    }
     if (this.failure) return { ...this.failure, pin: OFF };
 
     const sim = this.sim!;
@@ -74,8 +88,8 @@ export class LiveSimulation {
     };
   }
 
-  private load(circuit: Circuit) {
-    this.circuit = circuit;
+  private load(circuit: Circuit, topology: string) {
+    this.topology = topology;
     this.applied = {};
     const result = compile(circuit, this.resolve, this.options);
     if (!result.ok) {

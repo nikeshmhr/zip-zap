@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildCircuit } from '../../src/engine/builder.ts';
 import { primitiveResolver } from '../../src/engine/primitives.ts';
+import { moveComponents } from '../../src/state/editing.ts';
 import { LiveSimulation } from '../../src/ui/editor/liveSimulation.ts';
 
 const nandCircuit = buildCircuit({ inputs: ['A', 'B'], outputs: ['OUT'] }, (b) => {
@@ -40,6 +41,20 @@ describe('LiveSimulation', () => {
     expect(live.evaluate(latch, { nS: 1, nR: 1 }).pin('out:Q', 'in')).toBe(1); // hold
     expect(live.evaluate(latch, { nS: 1, nR: 0 }).pin('out:Q', 'in')).toBe(0); // reset
     expect(live.evaluate(latch, { nS: 1, nR: 1 }).pin('out:Q', 'in')).toBe(0); // hold
+  });
+
+  it('keeps state when parts only move, and resets when the wiring changes', () => {
+    const live = new LiveSimulation(primitiveResolver);
+    live.evaluate(latch, { nS: 0, nR: 1 });
+    expect(live.evaluate(latch, { nS: 1, nR: 1 }).pin('out:Q', 'in')).toBe(1);
+
+    const moved = moveComponents(latch, ['c1'], { x: 3, y: 2 });
+    const afterMove = live.evaluate(moved, { nS: 1, nR: 1 });
+    expect(afterMove.status).toBe('ok');
+    expect(afterMove.pin('out:Q', 'in')).toBe(1);
+
+    const rewired = { ...moved, wires: moved.wires.slice(0, -1) };
+    expect(live.evaluate(rewired, { nS: 1, nR: 1 }).pin('out:Q', 'in')).toBe(0);
   });
 
   it('keeps earlier snapshots unchanged after later evaluations', () => {
