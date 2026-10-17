@@ -2,6 +2,7 @@
  * The game's content: chapters and levels in play order.
  */
 import { CH0 } from './levels/ch0.ts';
+import { CH1 } from './levels/ch1.ts';
 import { createCatalogue } from './registry.ts';
 import type { ChapterDef } from './types.ts';
 
@@ -13,6 +14,6 @@ export const CHAPTERS: readonly ChapterDef[] = [
   { id: 4, title: 'Memory', blurb: 'Feedback, the clock, and a tiny RAM.' },
 ];
 
-export const LEVELS = [...CH0];
+export const LEVELS = [...CH0, ...CH1];
 
 export const catalogue = createCatalogue(CHAPTERS, LEVELS);
