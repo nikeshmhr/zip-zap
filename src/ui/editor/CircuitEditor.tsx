@@ -28,6 +28,7 @@ import {
 import type { WireRequest } from './geometry.ts';
 import { hitTest } from './hitTest.ts';
 import type { Effect, InteractionContext, Mode, PointerInput } from './interaction.ts';
+import type { PinEnd } from './interaction.ts';
 import { IDLE, cancel, normalizeRect, pointerDown, pointerMove, pointerUp } from './interaction.ts';
 import type { LiveSnapshot } from './liveSimulation.ts';
 import { LiveSimulation } from './liveSimulation.ts';
@@ -60,6 +61,9 @@ function useToast() {
   }, [toast]);
   return [toast, (message: string) => setToast({ message, key: Date.now() })] as const;
 }
+
+/** How close (grid units) a dropped wire must be to a pin to snap onto it. */
+const SNAP_DISTANCE = 1.25;
 
 const isTyping = (e: KeyboardEvent) =>
   e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
@@ -126,6 +130,22 @@ export function CircuitEditor(props: CircuitEditorProps) {
         const g = geomOf(c.kind);
         return g && rectsIntersect(partRect(c, g), rect) ? [c.id] : [];
       }),
+    nearestPin: (world, dir) => {
+      let best: { end: PinEnd; distance: number } | undefined;
+      for (const c of store.getState().circuit.components) {
+        const g = geomOf(c.kind);
+        if (!g) continue;
+        for (const pin of g.pins) {
+          if (pin.dir !== dir) continue;
+          const at = pinWorld(c, g, pin);
+          const distance = Math.hypot(at.x - world.x, at.y - world.y);
+          if (distance <= SNAP_DISTANCE && (!best || distance < best.distance)) {
+            best = { end: { ref: { comp: c.id, pin: pin.name }, dir }, distance };
+          }
+        }
+      }
+      return best?.end;
+    },
     wiresBetween: (ids) => {
       const chosen = new Set(ids);
       return store
@@ -334,10 +354,14 @@ export function CircuitEditor(props: CircuitEditorProps) {
     if (mode.kind !== 'wiring') return null;
     const from = pinAnchor(mode.from.ref.comp, mode.from.ref.pin, mode.from.dir);
     if (!from) return null;
+    const target =
+      mode.target && pinAnchor(mode.target.ref.comp, mode.target.ref.pin, mode.target.dir);
+    const end = target?.at ?? mode.cursor;
+    const endFacing = target?.facing ?? { x: 0, y: 0 };
     const route =
       mode.from.dir === 'out'
-        ? routeWire(from.at, from.facing, mode.cursor, { x: 0, y: 0 })
-        : routeWire(mode.cursor, { x: 0, y: 0 }, from.at, from.facing);
+        ? routeWire(from.at, from.facing, end, endFacing)
+        : routeWire(end, endFacing, from.at, from.facing);
     return polylinePath(route);
   }, [mode, pinAnchor]);
   const box = mode.kind === 'boxSelecting' ? normalizeRect(mode.start, mode.current) : null;
@@ -464,6 +488,11 @@ export function CircuitEditor(props: CircuitEditorProps) {
                 selected={selected.has(part.id)}
                 flagged={snapshot.flaggedParts.has(part.id)}
                 blockedPins={blocked.get(part.id)}
+                targetPin={
+                  mode.kind === 'wiring' && mode.target?.ref.comp === part.id
+                    ? mode.target.ref.pin
+                    : undefined
+                }
               />
             );
           })}

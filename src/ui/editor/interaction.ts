@@ -29,7 +29,13 @@ export type Mode =
       deselectOnClick?: boolean;
     }
   | { kind: 'dragging'; ids: readonly string[]; start: Point; applied: Point }
-  | { kind: 'wiring'; from: PinEnd; cursor: Point }
+  | {
+      kind: 'wiring';
+      from: PinEnd;
+      cursor: Point;
+      /** The pin the wire would connect to if released now (snapped when close). */
+      target?: PinEnd;
+    }
   | { kind: 'boxSelecting'; start: Point; current: Point; base: Selection };
 
 export type Effect =
@@ -48,6 +54,8 @@ export interface InteractionContext {
   partsInRect(rect: Rect): string[];
   /** Ids of wires whose both ends are on the given parts. */
   wiresBetween(components: readonly string[]): string[];
+  /** The nearest pin of `dir` within snapping distance of a world point, if any. */
+  nearestPin(world: Point, dir: 'in' | 'out'): PinEnd | undefined;
 }
 
 export interface PointerInput {
@@ -156,8 +164,14 @@ export function pointerMove(mode: Mode, input: PointerInput, ctx: InteractionCon
       return [{ ...mode, applied: total }, [{ type: 'moveParts', ids: mode.ids, delta }]];
     }
 
-    case 'wiring':
-      return [{ ...mode, cursor: world }, []];
+    case 'wiring': {
+      const want = mode.from.dir === 'out' ? 'in' : 'out';
+      const target =
+        input.hit.type === 'pin'
+          ? { ref: input.hit.ref, dir: input.hit.dir }
+          : ctx.nearestPin(world, want);
+      return [{ ...mode, cursor: world, target }, []];
+    }
 
     case 'boxSelecting': {
       const components = union(
@@ -195,8 +209,10 @@ export function pointerUp(mode: Mode, input: PointerInput, ctx: InteractionConte
       return [IDLE, [{ type: 'endGesture' }]];
 
     case 'wiring': {
-      if (hit.type !== 'pin') return [IDLE, []];
-      const to = { ref: hit.ref, dir: hit.dir };
+      const want = mode.from.dir === 'out' ? 'in' : 'out';
+      const to =
+        hit.type === 'pin' ? { ref: hit.ref, dir: hit.dir } : ctx.nearestPin(input.world, want);
+      if (!to) return [IDLE, []];
       const same = to.ref.comp === mode.from.ref.comp && to.ref.pin === mode.from.ref.pin;
       return [IDLE, same ? [] : [{ type: 'connect', from: mode.from, to }]];
     }

@@ -208,3 +208,14 @@ test('Space activates a focused toolbox button instead of starting a pan', async
   await page.keyboard.press('Space');
   await expect(parts).toHaveCount(6);
 });
+
+test('a wire dropped near a pin snaps onto it', async ({ page }) => {
+  const a = await centre(page, '[data-pin="in:A|out|out"]');
+  const b = await centre(page, '[data-pin="p1|a|in"]');
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move(b.x - 9, b.y + 7, { steps: 6 });
+  await expect(page.locator('[data-pin="p1|a|in"]')).toHaveAttribute('data-target');
+  await page.mouse.up();
+  await expect(page.locator('[data-wire]')).toHaveCount(1);
+});

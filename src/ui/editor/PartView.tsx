@@ -25,6 +25,8 @@ export interface PartViewProps {
   decorative?: boolean;
   /** Pins a wire being drawn can't end on (dimmed instead of highlighted). */
   blockedPins?: ReadonlySet<string>;
+  /** The pin a wire being drawn will connect to if released now. */
+  targetPin?: string;
 }
 
 /** Primitives whose pin names aren't printed on the part; they appear on hover. */
@@ -231,6 +233,7 @@ export const PartView = memo(function PartView(props: PartViewProps) {
             className={styles.pinGroup}
             data-pin={decorative ? undefined : pinKeyAttr(part.id, pin.name, pin.dir)}
             data-blocked={props.blockedPins?.has(pin.name) || undefined}
+            data-target={props.targetPin === pin.name || undefined}
           >
             {/* A larger invisible target makes pins easy to grab. */}
             {!decorative && <circle className={styles.pinHit} cx={pin.x} cy={pin.y} r={0.7} />}

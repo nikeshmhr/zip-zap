@@ -187,3 +187,10 @@
     transition: none;
   }
 }
+
+/* The pin a wire being drawn will snap to. */
+.pinGroup[data-target] .pin {
+  r: 0.5;
+  fill: var(--selection);
+  stroke: var(--selection);
+}

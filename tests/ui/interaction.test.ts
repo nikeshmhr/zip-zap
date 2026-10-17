@@ -18,6 +18,11 @@ const ctx = (
   selection,
   partsInRect: () => inRect,
   wiresBetween: (ids) => (ids.includes('p1') && ids.includes('p2') ? ['w12'] : []),
+  // One input pin, p9.a at (20, 20), snaps within one unit.
+  nearestPin: (world, dir) =>
+    dir === 'in' && Math.hypot(world.x - 20, world.y - 20) <= 1
+      ? { ref: { comp: 'p9', pin: 'a' }, dir: 'in' }
+      : undefined,
 });
 
 const part = (id: string): HitTarget => ({ type: 'part', id });
@@ -167,6 +172,20 @@ describe('wiring', () => {
         type: 'connect',
         from: { ref: { comp: 'p1', pin: 'out' }, dir: 'out' },
         to: { ref: { comp: 'p2', pin: 'a' }, dir: 'in' },
+      },
+    ]);
+  });
+
+  it('snaps to a nearby pin, showing it as the target while dragging', () => {
+    const [wiring] = pointerDown(IDLE, at(1, 1, pin('p1', 'out', 'out')), ctx());
+    const [near] = pointerMove(wiring, at(20.6, 19.7), ctx());
+    expect(near).toMatchObject({ target: { ref: { comp: 'p9', pin: 'a' }, dir: 'in' } });
+    const [, effects] = pointerUp(near, at(20.6, 19.7), ctx());
+    expect(effects).toEqual([
+      {
+        type: 'connect',
+        from: { ref: { comp: 'p1', pin: 'out' }, dir: 'out' },
+        to: { ref: { comp: 'p9', pin: 'a' }, dir: 'in' },
       },
     ]);
   });
