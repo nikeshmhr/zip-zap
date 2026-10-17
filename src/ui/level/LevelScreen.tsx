@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { catalogue } from '../../content/index.ts';
 import type { LevelDef } from '../../content/types.ts';
 import { routeHref } from '../../app/router.ts';
+import { useLevelStatuses, useNextLevel } from '../../state/levelStatus.ts';
 import { levelEditor, useProgress } from '../../state/session.ts';
 import { CircuitEditor } from '../editor/CircuitEditor.tsx';
 import { Placeholder } from '../screens/Placeholder.tsx';
@@ -23,6 +24,27 @@ export function LevelScreen({ id }: { id: string }) {
       <Placeholder title="Level not found">
         <p>
           There's no level {id}. <a href={routeHref({ name: 'map' })}>Back to the map</a>
+        </p>
+      </Placeholder>
+    );
+  }
+  return <GatedLevel level={level} />;
+}
+
+function GatedLevel({ level }: { level: LevelDef }) {
+  const status = useLevelStatuses().get(level.id);
+  const next = useNextLevel();
+  if (status === 'locked') {
+    return (
+      <Placeholder title={`Level ${level.id} is locked`}>
+        <p>Solve the levels before it first: each one gives you a chip this level needs.</p>
+        <p>
+          {next && (
+            <>
+              <a href={routeHref({ name: 'level', id: next })}>Go to level {next}</a> ·{' '}
+            </>
+          )}
+          <a href={routeHref({ name: 'map' })}>Back to the map</a>
         </p>
       </Placeholder>
     );

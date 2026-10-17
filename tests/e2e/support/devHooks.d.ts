@@ -21,6 +21,7 @@ declare global {
           }[];
         },
       ): void;
+      solveBefore(id: string): void;
     };
   }
 }

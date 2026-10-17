@@ -136,7 +136,7 @@
   - Done when: tests cover a round-trip, a v1 fixture migration, and a corrupt-save backup.
 - [x] **T5.3 Autosave and load** · debounced 500 ms writes; per-level circuits restored on open
   - Done when: a manual reload mid-level restores the exact circuit.
-- [ ] **T5.4 Map screen** · chapters × level nodes (locked/available/solved + bests); entry point to the Sandbox
+- [x] **T5.4 Map screen** · chapters × level nodes (locked/available/solved + bests); entry point to the Sandbox
   - Done when: the map reflects progress, and locked levels can't be opened from the URL either.
 - [ ] **T5.5 Settings screen** · theme, sound, motion, export/import (with confirmation), reset progress (with confirmation)
   - Done when: export, then import into a cleared browser, restores everything.

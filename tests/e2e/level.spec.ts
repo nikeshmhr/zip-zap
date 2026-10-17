@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
-import { addPart, drawWire, openLevel } from './support/editor.ts';
+import { addPart, drawWire, openLevel, unlockLevel } from './support/editor.ts';
 
 const tableRows = (page: Page) =>
   page.getByRole('region', { name: 'Truth table' }).locator('tbody tr');
@@ -108,6 +108,7 @@ test('solving 0.4 shows metrics, unlocks NAND and leads on to 1.1', async ({ pag
 });
 
 test('shows the concept card on the first visit only, and on request', async ({ page }) => {
+  await unlockLevel(page, '1.4');
   await page.goto('/#/level/1.3');
   const card = page.getByRole('dialog', { name: 'About OR' });
   await expect(card).toContainText('De Morgan');
