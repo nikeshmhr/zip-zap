@@ -51,7 +51,7 @@
   stroke: var(--part-stroke);
   stroke-width: 0.16;
   stroke-linecap: round;
-  transition: all 120ms ease-out;
+  transition: transform 140ms ease-out;
 }
 
 .joint {

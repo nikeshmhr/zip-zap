@@ -4,11 +4,11 @@
  * `data-toggle` with their pin name.
  */
 import { memo } from 'react';
-import type { Bit, ComponentInstance } from '../../engine/model.ts';
+import type { Bit, ComponentInstance, Rotation } from '../../engine/model.ts';
 import { isChipKind } from '../../engine/model.ts';
 import type { PartGeom } from './geometry.ts';
 import { pinKeyAttr } from './hitTest.ts';
-import { partTransform } from './geometry.ts';
+import { partRect, partTransform } from './geometry.ts';
 import styles from './parts.module.css';
 
 export interface PartViewProps {
@@ -23,6 +23,27 @@ export interface PartViewProps {
   flagged?: boolean;
   /** A picture only (e.g. a toolbox preview): no hit-testing attributes. */
   decorative?: boolean;
+}
+
+/** Contact arm angles (degrees) for a closed and an open relay. */
+const ARM_CLOSED = -22.2;
+const ARM_OPEN = 11.3;
+
+type Anchor = 'start' | 'middle' | 'end';
+
+/**
+ * Text attributes that keep a label upright when its part is rotated: counter-rotate it about
+ * its anchor point, and flip start/end anchors upside down so it stays inside the part.
+ */
+function upright(x: number, y: number, rot: Rotation, anchor: Anchor) {
+  if (rot === 0) return { x, y, textAnchor: anchor };
+  const flipped: Record<Anchor, Anchor> = { start: 'end', middle: 'middle', end: 'start' };
+  return {
+    x,
+    y,
+    textAnchor: rot === 180 ? flipped[anchor] : 'middle',
+    transform: `rotate(${-rot} ${x} ${y})`,
+  };
 }
 
 function Body(props: PartViewProps) {
@@ -58,16 +79,20 @@ function Body(props: PartViewProps) {
           <line className={styles.linkage} x1={1.6} y1={1.5} x2={2.3} y2={2.45} />
           <line className={styles.lead} x1={0} y1={3} x2={1.4} y2={3} />
           <circle className={styles.joint} cx={1.4} cy={3} r={0.15} />
-          <line
-            className={styles.arm}
-            x1={1.4}
-            y1={3}
-            x2={closed ? 3.6 : 3.4}
-            y2={closed ? 2.1 : 3.4}
-          />
+          {/* The arm pivots at (1.4, 3); rotating it (rather than moving its end) animates. */}
+          <g transform="translate(1.4 3)">
+            <line
+              className={styles.arm}
+              x1={0}
+              y1={0}
+              x2={2.3}
+              y2={0}
+              style={{ transform: `rotate(${closed ? ARM_CLOSED : ARM_OPEN}deg)` }}
+            />
+          </g>
           <circle className={styles.joint} cx={3.6} cy={2} r={0.15} />
           <line className={styles.lead} x1={3.6} y1={2} x2={5} y2={2} />
-          <text className={styles.tag} x={4.2} y={0.75} textAnchor="end">
+          <text className={styles.tag} {...upright(4.2, 0.75, part.rot, 'end')}>
             {part.kind === 'relayNO' ? 'NO' : 'NC'}
           </text>
         </>
@@ -88,7 +113,7 @@ function Body(props: PartViewProps) {
       return (
         <>
           <rect className={styles.body} x={0.2} y={0.2} width={1.6} height={1.6} rx={0.3} />
-          <text className={styles.constant} x={1} y={1}>
+          <text className={styles.constant} {...upright(1, 1, part.rot, 'middle')}>
             {part.kind === 'const1' ? '1' : '0'}
           </text>
         </>
@@ -141,9 +166,6 @@ function Body(props: PartViewProps) {
       return (
         <>
           <rect className={styles.chip} x={0.5} y={0} width={w - 1} height={h} rx={0.5} />
-          <text className={styles.chipName} x={w / 2} y={-0.55}>
-            {name}
-          </text>
           {geom.pins.map((pin) => (
             <g key={`${pin.dir}:${pin.name}`}>
               <line
@@ -155,9 +177,12 @@ function Body(props: PartViewProps) {
               />
               <text
                 className={styles.pinLabel}
-                x={pin.dir === 'in' ? 0.85 : w - 0.85}
-                y={pin.y}
-                textAnchor={pin.dir === 'in' ? 'start' : 'end'}
+                {...upright(
+                  pin.dir === 'in' ? 0.85 : w - 0.85,
+                  pin.y,
+                  part.rot,
+                  pin.dir === 'in' ? 'start' : 'end',
+                )}
               >
                 {pin.name}
               </text>
@@ -171,42 +196,50 @@ function Body(props: PartViewProps) {
 
 export const PartView = memo(function PartView(props: PartViewProps) {
   const { part, geom, values = {}, selected, flagged, decorative } = props;
+  const rect = partRect(part, geom);
   return (
-    <g
-      className={styles.part}
-      data-part={decorative ? undefined : part.id}
-      data-kind={decorative ? undefined : part.kind}
-      data-selected={selected || undefined}
-      data-flagged={flagged || undefined}
-      transform={partTransform(part, geom)}
-    >
-      {/* Generous transparent hit area for selecting and dragging. */}
-      <rect className={styles.hit} x={0} y={0} width={geom.width} height={geom.height} />
-      {selected && (
-        <rect
-          className={styles.selection}
-          x={-0.4}
-          y={-0.4}
-          width={geom.width + 0.8}
-          height={geom.height + 0.8}
-          rx={0.6}
-        />
+    <>
+      <g
+        className={styles.part}
+        data-part={decorative ? undefined : part.id}
+        data-kind={decorative ? undefined : part.kind}
+        data-selected={selected || undefined}
+        data-flagged={flagged || undefined}
+        transform={partTransform(part, geom)}
+      >
+        {/* Generous transparent hit area for selecting and dragging. */}
+        <rect className={styles.hit} x={0} y={0} width={geom.width} height={geom.height} />
+        {selected && (
+          <rect
+            className={styles.selection}
+            x={-0.4}
+            y={-0.4}
+            width={geom.width + 0.8}
+            height={geom.height + 0.8}
+            rx={0.6}
+          />
+        )}
+        <Body {...props} />
+        {geom.pins.map((pin) => (
+          <g key={`${pin.dir}:${pin.name}`}>
+            <circle
+              className={styles.pin}
+              data-pin={decorative ? undefined : pinKeyAttr(part.id, pin.name, pin.dir)}
+              data-on={values[pin.name] === 1 || undefined}
+              cx={pin.x}
+              cy={pin.y}
+              r={0.32}
+            >
+              <title>{pin.name}</title>
+            </circle>
+          </g>
+        ))}
+      </g>
+      {isChipKind(part.kind) && (
+        <text className={styles.chipName} x={rect.x + rect.width / 2} y={rect.y - 0.55}>
+          {props.name}
+        </text>
       )}
-      <Body {...props} />
-      {geom.pins.map((pin) => (
-        <g key={`${pin.dir}:${pin.name}`}>
-          <circle
-            className={styles.pin}
-            data-pin={decorative ? undefined : pinKeyAttr(part.id, pin.name, pin.dir)}
-            data-on={values[pin.name] === 1 || undefined}
-            cx={pin.x}
-            cy={pin.y}
-            r={0.32}
-          >
-            <title>{pin.name}</title>
-          </circle>
-        </g>
-      ))}
-    </g>
+    </>
   );
 });
