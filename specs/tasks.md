@@ -155,7 +155,8 @@
   - Done when: the waveform renders for 4.x levels, with mismatches highlighted.
 - [x] **T6.4 Tick-by-tick mode** _(Should)_ · advance one tick at a time; shows propagation and oscillation
   - Done when: a player can watch an SR latch settle tick by tick.
-- [ ] **T6.5 Chapter 4 playthrough** · manually solve 4.1–4.6 in the UI and fix any friction
+- [x] **T6.5 Chapter 4 playthrough** · manually solve 4.1–4.6 in the UI and fix any friction
+  - Done 2026-10-17: a fresh playtester solved 4.1–4.6 in the UI. Fixed from it: 4.5/4.6 tests accepted ignored-LOAD designs (now mutation-checked), long step tables lost the failure and summary, unclear scrub state, overlay placement. Open: RAM wiring is long (62 wires); buses arrive in the CPU phase.
   - Done when: Tiny RAM is solved in the UI (spec AC 5).
 
 ## M7: Polish and release
