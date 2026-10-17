@@ -43,8 +43,10 @@ export interface CanvasProps {
 function useSpaceHeld() {
   const [held, setHeld] = useState(false);
   useEffect(() => {
+    // Space on a focused control (button, link, field) must keep doing its normal job.
     const isTyping = (e: KeyboardEvent) =>
-      e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+      e.target instanceof HTMLElement &&
+      !!e.target.closest('button, a, input, textarea, select, [role="button"], [contenteditable]');
     const down = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !isTyping(e)) {
         e.preventDefault();

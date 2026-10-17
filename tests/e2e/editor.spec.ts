@@ -201,3 +201,10 @@ test('Escape during a drag puts the part back', async ({ page }) => {
   await page.mouse.up();
   await expect(nand).toHaveAttribute('transform', before!);
 });
+
+test('Space activates a focused toolbox button instead of starting a pan', async ({ page }) => {
+  const parts = page.locator('[data-part]');
+  await page.locator('[data-tool="nand"]').focus();
+  await page.keyboard.press('Space');
+  await expect(parts).toHaveCount(6);
+});

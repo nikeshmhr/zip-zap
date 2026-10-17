@@ -194,9 +194,10 @@ export function CircuitEditor(props: CircuitEditorProps) {
         setHelpOpen(false);
         return;
       }
-      // Don't edit mid-gesture.
-      if (!idle) return;
+      // Always claim our shortcuts (e.g. so ⌘D never opens the bookmark dialog)...
       e.preventDefault();
+      // ...but don't edit mid-gesture.
+      if (!idle) return;
       switch (action.type) {
         case 'delete':
           s.deleteSelection();
