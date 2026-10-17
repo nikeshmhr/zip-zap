@@ -5,6 +5,7 @@ import { catalogue } from '../../content/index.ts';
 import type { LevelDef } from '../../content/types.ts';
 import type { Metrics } from '../../engine/metrics.ts';
 import { computeMetrics } from '../../engine/metrics.ts';
+import { validate } from '../../engine/validate.ts';
 import type { ChipId, Circuit } from '../../engine/model.ts';
 import { chipIdOf, isChipKind } from '../../engine/model.ts';
 import { useProgress } from '../../state/session.ts';
@@ -16,11 +17,16 @@ const chipLevel = new Map<ChipId, string>(
   ),
 );
 
-/** The player's design for a chip, or the reference design if they haven't solved it. */
+/**
+ * The player's design for a chip, or the reference design if they haven't solved it or their
+ * design no longer validates (e.g. after a content update).
+ */
 export function chipDesign(id: ChipId): Circuit | undefined {
   const levelId = chipLevel.get(id);
   if (!levelId) return undefined;
-  return useProgress.getState().get(levelId).design ?? catalogue.referenceCircuit(levelId);
+  const design = useProgress.getState().get(levelId).design;
+  if (design && validate(design, catalogue.resolve).ok) return design;
+  return catalogue.referenceCircuit(levelId);
 }
 
 export interface SolveMetrics {

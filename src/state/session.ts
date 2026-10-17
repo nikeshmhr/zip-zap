@@ -88,8 +88,15 @@ export interface LevelProgress {
 export interface ProgressState {
   levels: Record<string, LevelProgress>;
   get(id: string): LevelProgress;
-  /** Records a solve. Returns whether either best improved (always true the first time). */
-  markSolved(id: string, metrics: { count: number; delay?: number }, design: Circuit): boolean;
+  /**
+   * Records a solve. Returns whether either best improved (always true the first time).
+   * `metrics` is null if they couldn't be computed: the solve counts, but bests are untouched.
+   */
+  markSolved(
+    id: string,
+    metrics: { count: number; delay?: number } | null,
+    design: Circuit,
+  ): boolean;
   revealHint(id: string): void;
   markConceptSeen(id: string): void;
   /** Replaces all progress (loading a save, importing, resetting). */
@@ -104,6 +111,10 @@ export const useProgress = create<ProgressState>()((set, get) => ({
   markSolved: (id, metrics, design) => {
     const current = get().get(id);
     const old = current.best;
+    if (!metrics) {
+      set({ levels: { ...get().levels, [id]: { ...current, solved: true, design } } });
+      return false;
+    }
     const best = {
       count: old ? Math.min(old.count, metrics.count) : metrics.count,
       delay:

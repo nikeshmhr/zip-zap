@@ -65,4 +65,15 @@ describe('progress store', () => {
     useProgress.getState().replaceAll({});
     expect(useProgress.getState().get('1.1').solved).toBe(false);
   });
+
+  it('records a solve without metrics but never invents a best of 0', async () => {
+    const { useProgress } = await import('../../src/state/session.ts');
+    const empty = { components: [], wires: [] };
+    useProgress.getState().replaceAll({});
+    expect(useProgress.getState().markSolved('1.2', null, empty)).toBe(false);
+    expect(useProgress.getState().get('1.2')).toMatchObject({ solved: true, design: empty });
+    expect(useProgress.getState().get('1.2').best).toBeUndefined();
+    useProgress.getState().markSolved('1.2', { count: 2, delay: 2 }, empty);
+    expect(useProgress.getState().get('1.2').best).toEqual({ count: 2, delay: 2 });
+  });
 });

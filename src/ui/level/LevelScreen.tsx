@@ -111,9 +111,7 @@ function Level({ level }: { level: LevelDef }) {
             onSolved={(_, circuit) => {
               const metrics = solveMetrics(level, circuit);
               const previousBest = useProgress.getState().get(level.id).best;
-              const improved = useProgress
-                .getState()
-                .markSolved(level.id, metrics ?? { count: 0 }, circuit);
+              const improved = useProgress.getState().markSolved(level.id, metrics, circuit);
               setSolved({ metrics, previousBest, improved });
             }}
           />

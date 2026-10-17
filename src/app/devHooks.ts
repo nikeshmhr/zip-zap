@@ -25,8 +25,7 @@ export function installDevHooks() {
       for (const level of catalogue.levels) {
         if (level.id === id) break;
         const design = catalogue.referenceCircuit(level.id);
-        const metrics = solveMetrics(level, design) ?? { count: 0 };
-        useProgress.getState().markSolved(level.id, metrics, design);
+        useProgress.getState().markSolved(level.id, solveMetrics(level, design), design);
       }
     },
   };
