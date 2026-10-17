@@ -117,6 +117,27 @@ describe('computeMetrics: nested chips', () => {
 });
 
 describe('computeMetrics: feedback', () => {
+  it('ignores a stray loop that reaches no output when computing delay', () => {
+    const circuit = buildCircuit(io2, (b) => {
+      b.wire(not(b, 'a'), 'out');
+      const stray = b.add('nand');
+      b.wire(stray.out('out'), stray.in('a'));
+    });
+    expect(computeMetrics(circuit, resolver, lookup)).toEqual({ relays: 0, nands: 2, delay: 1 });
+  });
+
+  it('returns null rather than throwing for designs that contain each other', () => {
+    const r = createResolver([gateChip('x', () => true), gateChip('y', () => true)]);
+    const uses = (id: string) =>
+      buildCircuit(io2, (b) => {
+        const g = b.add(chipKind(id));
+        b.wire('a', g.in('a'));
+        b.wire(g.out('out'), 'out');
+      });
+    const designsXY: Record<string, Circuit> = { x: uses('y'), y: uses('x') };
+    expect(computeMetrics(uses('x'), r, (id) => designsXY[id])).toBeNull();
+  });
+
   it('an SR latch reports its count but no delay', () => {
     const latch = buildCircuit({ inputs: ['nS', 'nR'], outputs: ['Q'] }, (b) => {
       const top = b.add('nand');

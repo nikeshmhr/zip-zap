@@ -48,7 +48,7 @@ function analyse(
     if (!isChipKind(kind)) return null;
     const id = chipIdOf(kind);
     if (cache.has(id)) return cache.get(id)!;
-    if (inProgress.has(id)) throw new Error(`Chip "${id}" contains itself`);
+    if (inProgress.has(id)) return null; // designs that contain each other
     const design = designs(id);
     inProgress.add(id);
     const result = design ? analyse(design, resolve, designs, cache, inProgress) : null;
@@ -89,41 +89,59 @@ function analyse(
   return metrics;
 }
 
-/** Longest weighted path ending at a level output; undefined if the circuit has a cycle. */
+/**
+ * Longest weighted path ending at a level output; undefined if a cycle feeds an output.
+ * Parts that don't reach any output (e.g. a stray looped gate) are ignored.
+ */
 function longestPath(
   circuit: Circuit,
   nets: { drivers: { comp: string }[]; readers: { comp: string }[] }[],
   weight: Map<string, number>,
 ): number | undefined {
   const succ = new Map<string, Set<string>>(circuit.components.map((c) => [c.id, new Set()]));
-  const indegree = new Map<string, number>(circuit.components.map((c) => [c.id, 0]));
+  const pred = new Map<string, Set<string>>(circuit.components.map((c) => [c.id, new Set()]));
   for (const net of nets) {
     for (const d of net.drivers) {
       for (const r of net.readers) {
-        const next = succ.get(d.comp)!;
-        if (next.has(r.comp)) continue;
-        next.add(r.comp);
-        indegree.set(r.comp, indegree.get(r.comp)! + 1);
+        succ.get(d.comp)!.add(r.comp);
+        pred.get(r.comp)!.add(d.comp);
       }
     }
   }
 
+  // Only parts that can reach an output matter.
+  const outs = circuit.components.filter((c) => c.kind === 'out').map((c) => c.id);
+  const relevant = new Set(outs);
+  for (const stack = [...outs]; stack.length > 0;) {
+    for (const p of pred.get(stack.pop()!)!) {
+      if (!relevant.has(p)) {
+        relevant.add(p);
+        stack.push(p);
+      }
+    }
+  }
+
+  const indegree = new Map<string, number>();
+  for (const id of relevant) {
+    indegree.set(id, [...pred.get(id)!].filter((p) => relevant.has(p)).length);
+  }
+
   const dist = new Map<string, number>();
-  const queue = circuit.components.filter((c) => indegree.get(c.id) === 0).map((c) => c.id);
+  const queue = [...relevant].filter((id) => indegree.get(id) === 0);
   for (const id of queue) dist.set(id, weight.get(id)!);
   let visited = 0;
   while (queue.length > 0) {
     const id = queue.shift()!;
     visited++;
     for (const next of succ.get(id)!) {
+      if (!relevant.has(next)) continue;
       dist.set(next, Math.max(dist.get(next) ?? 0, dist.get(id)! + weight.get(next)!));
       const remaining = indegree.get(next)! - 1;
       indegree.set(next, remaining);
       if (remaining === 0) queue.push(next);
     }
   }
-  if (visited < circuit.components.length) return undefined;
+  if (visited < relevant.size) return undefined;
 
-  const outs = circuit.components.filter((c) => c.kind === 'out');
-  return Math.max(0, ...outs.map((c) => dist.get(c.id) ?? 0));
+  return Math.max(0, ...outs.map((id) => dist.get(id) ?? 0));
 }
