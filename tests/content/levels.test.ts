@@ -209,6 +209,64 @@ describe('chapter 4: memory', () => {
     }
   };
 
+  it('fails a 4-bit register whose bits 0 and 2 always load (playtest)', () => {
+    const report = play('4.5', (b) => {
+      const one = part(b, 'const1').out('out');
+      for (const i of [0, 1, 2, 3]) {
+        const load = i === 0 || i === 2 ? one : 'LOAD';
+        const reg = part(b, CHIP.register, { D: `D${i}`, LOAD: load, CLK: 'CLK' });
+        b.wire(reg.out('Q'), `Q${i}`);
+      }
+    });
+    expectWrong(report);
+  });
+
+  it('fails a RAM whose words load whenever they are addressed, ignoring LOAD (playtest)', () => {
+    const report = play('4.6', (b) => {
+      const decoder = part(b, CHIP.decoder, { A1: 'A1', A0: 'A0' });
+      // Exactly the playtest's design: only word 3 gates its LOAD.
+      const regs = [0, 1, 2, 3].map((w) =>
+        part(b, CHIP.register4, {
+          ...data,
+          LOAD: w === 3 ? and(b, decoder.out('Y3'), 'LOAD') : decoder.out(`Y${w}`),
+          CLK: 'CLK',
+        }),
+      );
+      for (const i of [0, 1, 2, 3]) {
+        const select: Record<string, ReturnType<typeof nand> | string> = { S1: 'A1', S0: 'A0' };
+        regs.forEach((reg, w) => (select[`D${w}`] = reg.out(`Q${i}`)));
+        b.wire(part(b, CHIP.mux4, select).out('OUT'), `Q${i}`);
+      }
+    });
+    expectWrong(report);
+  });
+
+  it('fails whenever any LOAD input in the reference is tied ON (mutation check)', () => {
+    for (const id of ['4.5', '4.6']) {
+      const reference = catalogue.referenceCircuit(id);
+      const loads = reference.wires.filter((w) => w.to.pin === 'LOAD');
+      expect(loads.length, id).toBeGreaterThan(0);
+      for (const target of loads) {
+        const mutated = {
+          components: [
+            ...reference.components,
+            { id: 'one', kind: 'const1' as const, pos: { x: 0, y: 0 }, rot: 0 as const },
+          ],
+          wires: reference.wires.map((w) =>
+            w === target ? { ...w, from: { comp: 'one', pin: 'out' } } : w,
+          ),
+        };
+        const report = runTests(
+          mutated,
+          catalogue.resolve,
+          catalogue.testSpec(id),
+          catalogue.validateOptions(id),
+        );
+        expect(report.passed, `${id}: LOAD of ${target.to.comp} tied ON`).toBe(false);
+      }
+    }
+  });
+
   it('accepts the reference-style RAM, and fails each broken variant', () => {
     expect(play('4.6', (b) => ram(b)).passed).toBe(true);
     expectWrong(play('4.6', (b) => ram(b, { words: [1, 2] })));

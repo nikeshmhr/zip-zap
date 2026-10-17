@@ -255,7 +255,7 @@ At power-on, Q may start either way; the first clock pulse sets it.`,
     unlocks: { kind: CHIP.register, name: 'Register' },
     concept: `A flip-flop stores a new value on *every* clock edge. A **register** stores one only when told to: on the clock edge it loads D if **LOAD** is ON, and otherwise keeps its value.
 
-Tempting shortcut: switch the clock off with an AND gate. This level accepts it, but designers treat "clock gating" with care: the extra gate delays the clock, and a LOAD change while the clock is ON can create a false edge. The safer habit is to let the flip-flop clock every time and choose *what* it stores.`,
+Tempting shortcut: switch the clock off with an AND gate. This level accepts it, and it even saves gates, but designers treat "clock gating" with care: the extra gate delays the clock, and a LOAD change while the clock is ON can create a false edge. The safer habit is to let the flip-flop clock every time and choose *what* it stores.`,
     hints: [
       'On every clock edge the flip-flop stores something. When LOAD is OFF, what should that be?',
       "Put a Mux in front of the flip-flop. SEL = LOAD chooses between the flip-flop's own Q (keep) and D (new).",
@@ -286,14 +286,17 @@ Tempting shortcut: switch the clock off with an AND gate. This level accepts it,
           // Values chosen so every bit differs from every other bit somewhere (catches swaps).
           { set: word('D', 0b1100) },
           ...pulse(),
-          { set: { ...word('D', 0b0110), LOAD: 0 } },
+          // LOAD off with every bit of D different from what's stored: nothing may change.
+          { set: { ...word('D', 0b0011), LOAD: 0 } },
           ...pulse(), // keeps 1100
-          { set: { LOAD: 1 } },
+          { set: { ...word('D', 0b0110), LOAD: 1 } },
           ...pulse(), // loads 0110
           { set: word('D', 0b1111) },
           { set: { CLK: 1 } },
           { set: word('D', 0) }, // clock high: D ignored (catches latch-based designs)
           { set: { CLK: 0 } },
+          { set: { ...word('D', 0b0000), LOAD: 0 } },
+          ...pulse(), // keeps 1111
         ],
       ],
     },
@@ -348,8 +351,14 @@ CPUs keep the values they're working on in registers like this one. They're the 
           { set: { CLK: 0 } },
           read(2), // other words untouched
           read(1),
-          { set: { ...address(3), ...word('D', 7), LOAD: 0 } },
-          ...pulse(), // LOAD off: nothing stored
+          // LOAD off at every address, with D the opposite of the stored word: nothing changes.
+          ...[0b1001, 0b1111, 0b1010, 0b0110].flatMap((stored, addr): Step[] => [
+            { set: { ...address(addr), ...word('D', ~stored & 0b1111), LOAD: 0 } },
+            ...pulse(),
+          ]),
+          read(0),
+          read(1),
+          read(2),
           read(3),
         ],
       ],
