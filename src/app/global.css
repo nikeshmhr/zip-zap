@@ -20,6 +20,10 @@
   --danger: #c92a2a;
   --success: #2b8a3e;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.06);
+  --family-gates: #1c7ed6;
+  --family-routing: #2b8a3e;
+  --family-arithmetic: #7048e8;
+  --family-memory: #e67700;
   --radius: 10px;
   --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;

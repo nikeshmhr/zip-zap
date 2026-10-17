@@ -45,7 +45,7 @@ export function partGeometry(def: ComponentDef, name = ''): PartGeom {
     Math.max(
       6,
       Math.ceil(name.length * 0.62) + 2,
-      Math.ceil((longest(def.inputs) + longest(def.outputs)) * 0.55) + 3,
+      Math.ceil((longest(def.inputs) + longest(def.outputs)) * 0.62) + 3,
     );
   const column = (names: readonly string[], dir: 'in' | 'out', x: number): PinGeom[] => {
     const top = (height - names.length * PIN_PITCH) / 2 + PIN_PITCH / 2;

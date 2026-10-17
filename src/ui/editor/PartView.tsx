@@ -27,6 +27,8 @@ export interface PartViewProps {
   blockedPins?: ReadonlySet<string>;
   /** The pin a wire being drawn will connect to if released now. */
   targetPin?: string;
+  /** Chip family, for its tint (gates, routing, arithmetic, memory). */
+  family?: string;
 }
 
 /** Primitives whose pin names aren't printed on the part; they appear on hover. */
@@ -212,6 +214,7 @@ export const PartView = memo(function PartView(props: PartViewProps) {
         data-kind={decorative ? undefined : part.kind}
         data-selected={selected || undefined}
         data-flagged={flagged || undefined}
+        data-family={props.family}
         transform={partTransform(part, geom)}
       >
         {/* Generous transparent hit area for selecting and dragging. */}

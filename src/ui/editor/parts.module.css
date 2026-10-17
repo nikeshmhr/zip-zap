@@ -98,7 +98,7 @@
 }
 
 .pinLabel {
-  font-size: 0.62px;
+  font-size: 0.72px;
   fill: var(--text-muted);
 }
 
@@ -193,4 +193,21 @@
   r: 0.5;
   fill: var(--selection);
   stroke: var(--selection);
+}
+
+/* Chip families get a tint so NOT, Mux, Adder and Register don't all look alike. */
+.part[data-family='gates'] .chip {
+  fill: color-mix(in srgb, var(--family-gates) 16%, var(--part-fill));
+}
+
+.part[data-family='routing'] .chip {
+  fill: color-mix(in srgb, var(--family-routing) 16%, var(--part-fill));
+}
+
+.part[data-family='arithmetic'] .chip {
+  fill: color-mix(in srgb, var(--family-arithmetic) 16%, var(--part-fill));
+}
+
+.part[data-family='memory'] .chip {
+  fill: color-mix(in srgb, var(--family-memory) 16%, var(--part-fill));
 }

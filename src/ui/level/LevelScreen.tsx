@@ -1,6 +1,7 @@
 /**
  * A level: header, editor with the level's toolbox, and the goal panel (plan §8).
  */
+import { chipFamily } from '../chipFamily.ts';
 import { useMemo, useState } from 'react';
 import { catalogue } from '../../content/index.ts';
 import type { LevelDef } from '../../content/types.ts';
@@ -78,6 +79,7 @@ function Level({ level }: { level: LevelDef }) {
           displayName={catalogue.displayName}
           label={`Level ${level.id} circuit`}
           options={options}
+          family={chipFamily}
           toolbox={catalogue.toolbox(level.id)}
         />
         <aside className={styles.panel} aria-label="Level">

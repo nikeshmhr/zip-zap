@@ -1,3 +1,4 @@
+import { chipFamily } from '../chipFamily.ts';
 import { useState } from 'react';
 import { catalogue } from '../../content/index.ts';
 import type { ComponentKind } from '../../engine/model.ts';
@@ -31,6 +32,7 @@ export function SandboxScreen() {
       resolve={catalogue.resolve}
       displayName={catalogue.displayName}
       label="Sandbox circuit"
+      family={chipFamily}
       toolbox={ALL_KINDS}
     />
   );

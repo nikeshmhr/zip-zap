@@ -15,9 +15,20 @@ export interface ToolboxProps {
   displayName(kind: ComponentKind): string;
   geomOf(kind: ComponentKind): PartGeom | undefined;
   onAdd(kind: ComponentKind): void;
+  family?(kind: ComponentKind): string | undefined;
 }
 
-function Preview({ kind, geom, name }: { kind: ComponentKind; geom: PartGeom; name: string }) {
+function Preview({
+  kind,
+  geom,
+  name,
+  family,
+}: {
+  kind: ComponentKind;
+  geom: PartGeom;
+  name: string;
+  family?: string;
+}) {
   const pad = 1;
   const top = isChipKind(kind) ? 1.4 : 0; // room for the chip title
   return (
@@ -30,13 +41,14 @@ function Preview({ kind, geom, name }: { kind: ComponentKind; geom: PartGeom; na
         part={{ id: `preview-${kind}`, kind, pos: { x: 0, y: 0 }, rot: 0 }}
         geom={geom}
         name={name}
+        family={family}
         decorative
       />
     </svg>
   );
 }
 
-export function Toolbox({ kinds, displayName, geomOf, onAdd }: ToolboxProps) {
+export function Toolbox({ kinds, displayName, geomOf, onAdd, family }: ToolboxProps) {
   const groups = [
     { title: 'Parts', kinds: kinds.filter((k) => !isChipKind(k)) },
     { title: 'Your chips', kinds: kinds.filter(isChipKind) },
@@ -65,7 +77,9 @@ export function Toolbox({ kinds, displayName, geomOf, onAdd }: ToolboxProps) {
                     }}
                     onClick={() => onAdd(kind)}
                   >
-                    {geom && <Preview kind={kind} geom={geom} name={name} />}
+                    {geom && (
+                      <Preview kind={kind} geom={geom} name={name} family={family?.(kind)} />
+                    )}
                     <span className={styles.name}>{name}</span>
                   </button>
                 </li>

@@ -49,6 +49,8 @@ export interface CircuitEditorProps {
   options?: ValidateOptions;
   /** Kinds the player may place. */
   toolbox: readonly ComponentKind[];
+  /** Chip family for tinting, if any. */
+  family?(kind: ComponentKind): string | undefined;
 }
 
 /** Shows a short message over the canvas, e.g. why a wire was refused. */
@@ -69,7 +71,7 @@ const isTyping = (e: KeyboardEvent) =>
   e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
 
 export function CircuitEditor(props: CircuitEditorProps) {
-  const { store, resolve, displayName, label, options, toolbox } = props;
+  const { store, resolve, displayName, label, options, toolbox, family } = props;
   const circuit = useStore(store, (s) => s.circuit);
   const selection = useStore(store, (s) => s.selection);
   const inputs = useStore(store, (s) => s.inputs);
@@ -415,6 +417,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
         kinds={toolbox}
         displayName={displayName}
         geomOf={geomOf}
+        family={family}
         onAdd={(kind) =>
           place(
             kind,
@@ -488,6 +491,7 @@ export function CircuitEditor(props: CircuitEditorProps) {
                 selected={selected.has(part.id)}
                 flagged={snapshot.flaggedParts.has(part.id)}
                 blockedPins={blocked.get(part.id)}
+                family={family?.(part.kind)}
                 targetPin={
                   mode.kind === 'wiring' && mode.target?.ref.comp === part.id
                     ? mode.target.ref.pin
