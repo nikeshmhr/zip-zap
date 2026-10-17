@@ -12,6 +12,7 @@ import { planSequences, runTests } from '../../engine/testRunner.ts';
 import type { EditorStore } from '../../state/editorStore.ts';
 import { groupColumns } from './columns.ts';
 import { Hints } from './Hints.tsx';
+import { TryIt } from './TryIt.tsx';
 import type { StepRef } from './StepTable.tsx';
 import { StepTable } from './StepTable.tsx';
 import { Waveform } from './Waveform.tsx';
@@ -94,6 +95,7 @@ export function GoalPanel({ level, store, onSolved }: GoalPanelProps) {
         <h2 className={styles.heading}>Goal</h2>
         <p className={styles.summary}>{level.summary}</p>
       </section>
+      <TryIt level={level} store={store} />
       <section className={styles.section} aria-label="Tests">
         <button type="button" className={styles.run} onClick={runAll}>
           Run tests

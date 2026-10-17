@@ -19,7 +19,7 @@
   height: 56px;
   border-radius: 16px;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-size: 28px;
   animation: burst 420ms ease-out;
 }
@@ -98,7 +98,7 @@
 .primary {
   border: none;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 
 .secondary {

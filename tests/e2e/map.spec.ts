@@ -6,7 +6,7 @@ test('a fresh game offers only level 0.1, and locked levels cannot be opened by 
 }) => {
   await page.goto('/#/map');
   await expect(page.getByRole('link', { name: /Start: 0.1 Relay/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: '0.1 Relay, ready to play' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^0\.1 Relay Ready to play$/ })).toBeVisible();
   await expect(page.locator('[data-status="locked"]')).toHaveCount(23);
 
   await page.goto('/#/level/2.1');
@@ -18,9 +18,9 @@ test('a fresh game offers only level 0.1, and locked levels cannot be opened by 
 test('shows solved levels with their best, and continues from the next one', async ({ page }) => {
   await unlockLevel(page, '1.1');
   await expect(page.getByRole('link', { name: /Continue: 1.1 NOT/ })).toBeVisible();
-  const nand = page.getByRole('link', { name: '0.4 NAND, solved' });
+  const nand = page.getByRole('link', { name: /^0\.4 NAND.*solved$/ });
   await expect(nand).toContainText('2 relays');
   await expect(page.getByRole('region', { name: /Switches/ })).toContainText('4/4');
-  await expect(page.getByRole('link', { name: '1.1 NOT, ready to play' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^1\.1 NOT Ready to play$/ })).toBeVisible();
   await expect(page.locator('[data-status="locked"]')).toHaveCount(19);
 });

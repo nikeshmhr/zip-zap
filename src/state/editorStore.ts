@@ -52,6 +52,8 @@ export interface EditorState {
   } | null;
   /** Tick-by-tick mode: the circuit advances one tick per request instead of settling. */
   tick: { mode: boolean; token: number };
+  /** Current lamp values by pin name, published by the editor's live simulation. */
+  lamps: Bits;
 }
 
 export interface EditorActions {
@@ -119,6 +121,7 @@ export function createEditorStore(
     gestureBase: null,
     replay: null,
     tick: { mode: false, token: 0 },
+    lamps: {},
 
     load: (circuit) =>
       set({ circuit, selection: EMPTY_SELECTION, past: [], future: [], gestureBase: null }),

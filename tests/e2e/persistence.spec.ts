@@ -32,8 +32,8 @@ async function solveNand(page: Page) {
 test('solving 0.4 opens chapter 1 on the map', async ({ page }) => {
   await solveNand(page);
   await page.goto('/#/map');
-  await expect(page.getByRole('link', { name: '0.4 NAND, solved' })).toContainText('2 relays');
-  await expect(page.getByRole('link', { name: '1.1 NOT, ready to play' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^0\.4 NAND.*solved$/ })).toContainText('2 relays');
+  await expect(page.getByRole('link', { name: /^1\.1 NOT Ready to play$/ })).toBeVisible();
 });
 
 test('a reload restores progress, bests and every circuit', async ({ page }) => {

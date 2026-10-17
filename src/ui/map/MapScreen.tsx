@@ -86,9 +86,11 @@ export function MapScreen() {
                         className={styles.level}
                         data-status={status}
                         href={routeHref({ name: 'level', id: level.id })}
-                        aria-label={`${level.id} ${level.title}, ${STATUS_TEXT[status].toLowerCase()}`}
                       >
                         {content}
+                        {status === 'solved' && (
+                          <span className={styles.visuallyHidden}>, solved</span>
+                        )}
                       </a>
                     )}
                   </li>

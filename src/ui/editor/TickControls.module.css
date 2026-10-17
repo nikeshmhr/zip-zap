@@ -35,7 +35,7 @@
 
 .next {
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
 }
 
 .next:disabled {

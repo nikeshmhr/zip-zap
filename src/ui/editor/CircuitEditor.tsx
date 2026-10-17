@@ -313,6 +313,20 @@ export function CircuitEditor(props: CircuitEditorProps) {
     if (moved) sounds.play('click');
   }, [relayCoils]);
 
+  // Publish lamp values so panels outside the canvas (e.g. "Try it") can show them.
+  const lampKey = circuit.components
+    .filter((c) => c.kind === 'out')
+    .map((c) => `${c.label ?? c.id}=${snapshot.pin(c.id, 'in')}`)
+    .join(',');
+  useEffect(() => {
+    const lamps: Record<string, Bit> = {};
+    for (const entry of lampKey ? lampKey.split(',') : []) {
+      const [name = '', value] = entry.split('=');
+      lamps[name] = value === '1' ? 1 : 0;
+    }
+    store.setState({ lamps });
+  }, [lampKey, store]);
+
   const selected = useMemo(() => new Set(selection.components), [selection.components]);
   const selectedWires = useMemo(() => new Set(selection.wires), [selection.wires]);
 

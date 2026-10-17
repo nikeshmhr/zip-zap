@@ -165,7 +165,7 @@
   - Done when: opening Full Adder from the toolbox shows the player's design.
 - [x] **T7.2 Feel** · solve animation, optional sounds (relay click, solve chime) respecting settings
   - Done when: the effects play, and none play when sound or motion is turned off.
-- [ ] **T7.3 Accessibility pass** · focus order, keyboard toggles, colour-blind-safe palette check, Playwright greyscale ON/OFF screenshot test
+- [x] **T7.3 Accessibility pass** · focus order, keyboard toggles, colour-blind-safe palette check, Playwright greyscale ON/OFF screenshot test
   - Done when: the greyscale test passes (spec AC 8) and a keyboard-only player can toggle inputs and run tests.
 - [ ] **T7.4 Wire bend points** _(optional)_ · manual bends on wires
   - Done when: the player can add and drag bend points on a wire.

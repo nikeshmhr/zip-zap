@@ -29,7 +29,7 @@
   height: 26px;
   border-radius: 7px;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-size: 14px;
 }
 
