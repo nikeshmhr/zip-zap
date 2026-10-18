@@ -2,6 +2,8 @@
 
 A browser puzzle game where you build a computer from the ground up.
 
+**▶ Play it: https://nikeshmhr.github.io/zip-zap/**
+
 Start with a handful of electromagnetic relays, discover the NAND gate, then climb through logic gates, routing, arithmetic and memory. **Every component you build becomes a chip you can reuse**, so by the end your toolbox holds a tiny RAM made from parts you built yourself.
 
 ## Playing
@@ -16,7 +18,7 @@ Start with a handful of electromagnetic relays, discover the NAND gate, then cli
 
 ## Status
 
-MVP feature-complete (milestones M0–M7 except the human playtest and release; see `specs/tasks.md`). The project follows spec-driven development:
+MVP released on GitHub Pages; the human playtest (T7.6) is next. See `specs/tasks.md`. The project follows spec-driven development:
 
 | Document                           | What it covers                                                                |
 | ---------------------------------- | ----------------------------------------------------------------------------- |

@@ -175,8 +175,9 @@
   - Done when: editing stays at 60 fps and the initial load is < 300 KB gzipped.
 - [ ] **T7.6 Playtest** · 3+ people, untouched, from 0.1 onward; record where they get stuck; fix or adjust hints
   - Done when: everyone completes 0.1 unaided (spec AC 1), and the fixes are logged and applied.
-- [ ] **T7.7 Release** · deploy the static build (GitHub Pages / Netlify / Vercel); README with the link and how to play
+- [x] **T7.7 Release** · deploy the static build (GitHub Pages / Netlify / Vercel); README with the link and how to play
   - Done when: a public URL plays the full MVP.
+  - Live at https://nikeshmhr.github.io/zip-zap/ since 2026-10-19, deployed by `.github/workflows/deploy.yml` on every push to `main`.
 
 ---
 
