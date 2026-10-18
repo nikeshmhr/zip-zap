@@ -44,4 +44,6 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## Deploying
 
+Every push to `main` is checked, built and published to GitHub Pages by `.github/workflows/deploy.yml` (the repo's Pages source must be set to **GitHub Actions**).
+
 `pnpm build` writes a static site to `dist/`. It uses relative paths and hash-based routes (`#/level/1.3`), so it works from any folder on any static host (GitHub Pages, Netlify, Vercel, an S3 bucket…) with no server configuration. Development-only test hooks are not included in the build.

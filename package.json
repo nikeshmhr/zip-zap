@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "description": "A browser puzzle game where you build a computer from relays up.",
   "type": "module",
+  "packageManager": "pnpm@10.30.0",
   "engines": {
     "node": ">=24"
   },
