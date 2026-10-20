@@ -1,8 +1,12 @@
 import type { ReactNode } from 'react';
+import { Suspense, lazy } from 'react';
 import { useSaveNotice } from '../../state/persist.ts';
 import type { Route } from '../../app/router.ts';
 import { routeHref } from '../../app/router.ts';
 import styles from './AppShell.module.css';
+
+/** Developer tools: a lazily loaded chunk that only exists in development builds. */
+const DevTools = import.meta.env.DEV ? lazy(() => import('../dev/DevTools.tsx')) : null;
 
 const NAV = [
   { route: { name: 'map' }, label: 'Map' },
@@ -45,6 +49,11 @@ export function AppShell({ route, children }: { route: Route; children: ReactNod
             </a>
           ))}
         </nav>
+        {DevTools && (
+          <Suspense fallback={null}>
+            <DevTools route={route} />
+          </Suspense>
+        )}
       </header>
       <main className={styles.main}>{children}</main>
     </div>

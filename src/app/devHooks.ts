@@ -4,9 +4,9 @@
  */
 import { catalogue } from '../content/index.ts';
 import type { Circuit } from '../engine/model.ts';
-import { levelEditor, useProgress } from '../state/session.ts';
-import { solveMetrics } from '../ui/level/solve.ts';
+import { levelEditor } from '../state/session.ts';
 import { sounds } from '../ui/sound.ts';
+import { loadSolution, solveBefore } from './devActions.ts';
 
 declare global {
   interface Window {
@@ -27,14 +27,7 @@ export function installDevHooks() {
     loadLevelCircuit: (id, circuit) =>
       levelEditor(id, catalogue.canvasIo(id)).getState().load(circuit),
     soundLog: () => [...sounds.log],
-    loadReference: (id) =>
-      levelEditor(id, catalogue.canvasIo(id)).getState().load(catalogue.referenceCircuit(id)),
-    solveBefore: (id) => {
-      for (const level of catalogue.levels) {
-        if (level.id === id) break;
-        const design = catalogue.referenceCircuit(level.id);
-        useProgress.getState().markSolved(level.id, solveMetrics(level, design), design);
-      }
-    },
+    loadReference: loadSolution,
+    solveBefore,
   };
 }
